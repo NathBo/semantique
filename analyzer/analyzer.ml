@@ -19,7 +19,7 @@ let doit filename =
   if !Options.verbose then
     Format.printf "%a" Cfg_printer.print_cfg cfg;
   Cfg_printer.output_dot !Options.cfg_out cfg;
-  Iterator.iterate cfg
+  Iterator.iterate filename cfg
 
 
 (* parses arguments to get filename *)

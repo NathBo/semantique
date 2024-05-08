@@ -13,14 +13,16 @@ let eval_bool_expr bexpr = match bexpr with
 
 
 
-let iterate cfg =
+let iterate filename cfg =
   let _ = Random.self_init () in
 
   let iter_arc arc: unit =
     match arc.arc_inst with
     | CFG_skip _ -> ()
-    | CFG_assert (bexpr,_) ->  if not (eval_bool_expr bexpr)
-      then Format.printf "pas bien\n"
+    | CFG_assert (bexpr,ext) ->  if not (eval_bool_expr bexpr)
+      then begin
+        print_endline ("File "^filename^", line "^(string_of_int (fst ext).pos_lnum)^": Assertion failure")
+      end
     | _ -> failwith "TODO"
   in
 

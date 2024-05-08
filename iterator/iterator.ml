@@ -7,11 +7,20 @@
 open Frontend
 open Cfg
 
+let eval_bool_expr bexpr = match bexpr with
+  | CFG_bool_const b -> b
+  | _ -> failwith "TODO bool"
+
+
+
 let iterate cfg =
   let _ = Random.self_init () in
 
   let iter_arc arc: unit =
     match arc.arc_inst with
+    | CFG_skip _ -> ()
+    | CFG_assert (bexpr,_) ->  if not (eval_bool_expr bexpr)
+      then Format.printf "pas bien\n"
     | _ -> failwith "TODO"
   in
 

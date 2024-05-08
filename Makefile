@@ -27,3 +27,10 @@ doc: all
 compress: clean
 	@tar -czvf ../project-semantics.tar.gz --exclude=".git*" ../project-semantics
 	@mv ../project-semantics.tar.gz .
+
+run: all
+	@./_build/default/analyzer/analyzer.exe $(file)
+#utiliser sous forme "make file=examples/bool/assert_false_false.c run"
+
+check: all
+	@./_build/default/analyzer/analyzer.exe test.c

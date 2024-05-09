@@ -1,7 +1,7 @@
 open Frontend
 open Abstract_syntax_tree
 
-type value_Set = True | False | TrueOrFalse | Neither
+type bool_Set = True | False | TrueOrFalse | Neither
 
 
 module BOOL_DOMAIN =
@@ -75,27 +75,46 @@ module BOOL_DOMAIN =
        i.e., we filter the abstract values x and y knowing that, after
        applying the operation op, the result is in r
       *)
-    let bwd_binary: t -> t -> int_binary_op -> t -> (t * t)
+    let bwd_binary x y op r = failwith "beaucoup trop cancer"
 
 
     (* set-theoretic operations *)
-    let join: t -> t -> t
-    let meet: t -> t -> t
+    let join a b = match a,b with
+      | (_,TrueOrFalse) | (TrueOrFalse,_) | (True,False) | (False,True) -> TrueOrFalse
+      | (True,_) | (_,True) -> True
+      | (False,_) | (_,False) -> False
+      | (Neither,Neither) -> Neither
+
+
+    let meet a b = match a,b with
+      | (Neither,_) | (_,Neither) | (True,False) | (False,True) -> Neither
+      | (True,_) | (_,True) -> True
+      | (False,_) | (_,False) -> False
+      | (TrueOrFalse,TrueOrFalse) -> TrueOrFalse
 
     (* widening *)
-    let widen: t -> t -> t
+    let widen = failwith "ca veut dire koi mdr ?"
 
     (* narrowing *)
-    let narrow: t -> t -> t
+    let narrow a b = match (a,b) with
+      | (a,Neither) -> a
+      | (_,TrueOrFalse) | (Neither,_) -> Neither
+      | (True,False) | (TrueOrFalse,False) -> True
+      | (False,True) | (TrueOrFalse,True) -> False
+      | (True,True) | (False,False) -> Neither
 
     (* subset inclusion of concretizations *)
-    let subset: t -> t -> bool
+    let subset a b = (narrow a b) = Neither
 
     (* check the emptiness of the concretization *)
-    let is_bottom: t -> bool
+    let is_bottom a = a = Neither 
 
     (* print abstract element *)
-    let print: Format.formatter -> t -> unit
+    let print fmt a = match a with
+    | TrueOrFalse -> Format.printf fmt "TrueOrFalse"
+    | True -> Format.printf fmt "True"
+    | False -> Format.printf fmt "False"
+    | Neither -> Format.printf fmt "Neither"
 
 end;;
 

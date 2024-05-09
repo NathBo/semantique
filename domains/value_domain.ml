@@ -19,7 +19,6 @@ module IntSet = Set.Make(
     type t = int
   end )
 
-type value_Set = All | S of IntSet.t
 
 module VALUE_DOMAIN =
   struct
@@ -28,16 +27,15 @@ module VALUE_DOMAIN =
     (* type of abstract elements *)
     (* an element of type t abstracts a set of integers *)
 
-    type t = value_Set
+    type t = IntSet.t
 
     (* unrestricted value: [-oo,+oo] *)
-    let top = All
 
     (* bottom value: empty set *)
-    let bottom = S IntSet.empty
+    let bottom = IntSet.empty
 
     (* constant: {c} *)
-    let const n = S (IntSet.singleton n)
+    let const n = (IntSet.singleton n)
 
     (* interval: [a,b] *)
     let rand a b = 
@@ -45,7 +43,9 @@ module VALUE_DOMAIN =
         if a>b
         then s
         else IntSet.add a (aux (a+1) b s) in
-      S (aux a b IntSet.empty)
+      (aux a b IntSet.empty)
+
+    let top = rand min_int max_int
 
 
     (* unary operation *)
@@ -55,7 +55,7 @@ module VALUE_DOMAIN =
     let binary a b op = 
       let aux b_elt acc =
         IntSet.union acc (IntSet.map (apply_int_bin_op op b_elt) a) in
-      IntSet.fold aux b IntSet.empty
+      (IntSet.fold aux b IntSet.empty)
 
 
     (* comparison *)
@@ -67,7 +67,12 @@ module VALUE_DOMAIN =
        a safe, but not precise implementation, would be:
        compare x y op = (x,y)
      *)
-    let compare = failwith "pas implemente"
+    let compare x y op =
+      let rec aux other_set elt acc =
+        if IntSet.exists (apply_compare_op op elt) other_set
+        then IntSet.add elt acc
+        else acc in
+      (IntSet.fold (aux y) x IntSet.empty, IntSet.fold (aux x) y IntSet.empty)
 
 
     (* backards unary operation *)
@@ -89,23 +94,28 @@ module VALUE_DOMAIN =
 
 
     (* set-theoretic operations *)
-    let join = failwith "pas implemente"
-    let meet = failwith "pas implemente"
+    let join = IntSet.union
+    let meet = IntSet.inter
 
     (* widening *)
     let widen = failwith "pas implemente"
 
     (* narrowing *)
-    let narrow = failwith "pas implemente"
+    let narrow = IntSet.diff
 
     (* subset inclusion of concretizations *)
-    let subset = failwith "pas implemente"
+    let subset = IntSet.subset
 
     (* check the emptiness of the concretization *)
-    let is_bottom = failwith "pas implemente"
+    let is_bottom = IntSet.is_empty
 
     (* print abstract element *)
-    let print = failwith "pas implemente"
+    let print fmt a =
+      let rec aux fmt x =
+        Format.fprintf fmt "%i " x in
+      Format.fprintf fmt "IntSet : ";
+      IntSet.iter (aux fmt) a;
+      Format.fprintf fmt "\n"
 
 end
 

@@ -76,10 +76,19 @@ let apply_int_bin_op op a b = match op with
   | AST_MODULO when b>0 -> a mod b
   | AST_MODULO -> -(a mod b)
 
-  
+
 let apply_int_un_op op a = match op with
 | AST_UNARY_PLUS -> a
 | AST_UNARY_MINUS -> -a
+
+
+let apply_compare_op op a b = match op with
+| AST_EQUAL -> a=b
+| AST_NOT_EQUAL -> a<>b
+| AST_LESS -> a<b
+| AST_LESS_EQUAL -> a<=b
+| AST_GREATER -> a>b
+| AST_GREATER_EQUAL -> a>=b
 
 
 (* expressions *)

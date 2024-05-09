@@ -115,10 +115,10 @@ module BOOL_DOMAIN =
 
     (* print abstract element *)
     let print fmt a = match a with
-    | TrueOrFalse -> Format.printf fmt "TrueOrFalse"
-    | True -> Format.printf fmt "True"
-    | False -> Format.printf fmt "False"
-    | Neither -> Format.printf fmt "Neither"
+    | TrueOrFalse -> Format.fprintf fmt "TrueOrFalse"
+    | True -> Format.fprintf fmt "True"
+    | False -> Format.fprintf fmt "False"
+    | Neither -> Format.fprintf fmt "Neither"
 
 end;;
 

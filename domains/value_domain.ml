@@ -52,7 +52,10 @@ module VALUE_DOMAIN =
     let unary a op = IntSet.map (apply_int_un_op op) a
 
     (* binary operation *)
-    let binary = failwith "pas implemente"
+    let binary a b op = 
+      let aux b_elt acc =
+        IntSet.union acc (IntSet.map (apply_int_bin_op op b_elt) a) in
+      IntSet.fold aux b IntSet.empty
 
 
     (* comparison *)

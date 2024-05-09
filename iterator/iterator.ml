@@ -16,7 +16,7 @@ let get_main_node cfg =
     List.fold_left (fun node f -> if f.func_name = "main" then f.func_entry else node) cfg.cfg_init_entry cfg.cfg_funcs
 
 let iterate filename cfg =
-  print_endline "WARNING, this itrator doesn't support loops and goto (back)";
+  print_endline "WARNING, this iterator doesn't support loops and goto (back)";
   let _ = Random.self_init () in
   ignore filename; (* TODO *)
 

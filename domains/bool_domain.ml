@@ -24,8 +24,11 @@ module BOOL_DOMAIN =
 
 
     (* unary operation *)
-    let unary a op = match op with
-    | AST_NOT -> const (not a)
+    let unary a op = match a,op with
+    | (True,AST_NOT) -> False
+    | (False,AST_NOT) -> True
+    | (TrueOrFalse,AST_NOT) -> TrueOrFalse
+    | _ -> Neither
 
     (* binary operation *)
     let binary a b op = match (op,a,b) with

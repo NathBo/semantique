@@ -12,31 +12,47 @@
 open Frontend
 open Abstract_syntax_tree
 
-module type VALUE_DOMAIN =
-  sig
+
+module IntSet = Set.Make( 
+  struct
+    let compare = compare
+    type t = int
+  end )
+
+type value_Set = All | S of IntSet.t
+
+module VALUE_DOMAIN =
+  struct
+    
 
     (* type of abstract elements *)
     (* an element of type t abstracts a set of integers *)
-    type t
+
+    type t = value_Set
 
     (* unrestricted value: [-oo,+oo] *)
-    val top: t
+    let top = All
 
     (* bottom value: empty set *)
-    val bottom: t
+    let bottom = S IntSet.empty
 
     (* constant: {c} *)
-    val const: Z.t -> t
+    let const n = S (IntSet.singleton n)
 
     (* interval: [a,b] *)
-    val rand: Z.t -> Z.t -> t
+    let rand a b = 
+      let rec aux a b s =
+        if a>b
+        then s
+        else IntSet.add a (aux (a+1) b s) in
+      S (aux a b IntSet.empty)
 
 
     (* unary operation *)
-    val unary: t -> int_unary_op -> t
+    let unary a op = IntSet.map (apply_int_un_op op) a
 
     (* binary operation *)
-    val binary: t -> t -> int_binary_op -> t
+    let binary = failwith "pas implemente"
 
 
     (* comparison *)
@@ -48,7 +64,7 @@ module type VALUE_DOMAIN =
        a safe, but not precise implementation, would be:
        compare x y op = (x,y)
      *)
-    val compare: t -> t -> compare_op -> (t * t)
+    let compare = failwith "pas implemente"
 
 
     (* backards unary operation *)
@@ -57,7 +73,7 @@ module type VALUE_DOMAIN =
        i.e., we fiter the abstract values x knowing the result r of applying
        the operation on x
      *)
-    val bwd_unary: t -> int_unary_op -> t -> t
+    let bwd_unary = failwith "pas implemente"
 
      (* backward binary operation *)
      (* [bwd_binary x y op r] returns (x',y') where
@@ -66,27 +82,27 @@ module type VALUE_DOMAIN =
        i.e., we filter the abstract values x and y knowing that, after
        applying the operation op, the result is in r
       *)
-    val bwd_binary: t -> t -> int_binary_op -> t -> (t * t)
+    let bwd_binary = failwith "pas implemente"
 
 
     (* set-theoretic operations *)
-    val join: t -> t -> t
-    val meet: t -> t -> t
+    let join = failwith "pas implemente"
+    let meet = failwith "pas implemente"
 
     (* widening *)
-    val widen: t -> t -> t
+    let widen = failwith "pas implemente"
 
     (* narrowing *)
-    val narrow: t -> t -> t
+    let narrow = failwith "pas implemente"
 
     (* subset inclusion of concretizations *)
-    val subset: t -> t -> bool
+    let subset = failwith "pas implemente"
 
     (* check the emptiness of the concretization *)
-    val is_bottom: t -> bool
+    let is_bottom = failwith "pas implemente"
 
     (* print abstract element *)
-    val print: Format.formatter -> t -> unit
+    let print = failwith "pas implemente"
 
 end
 

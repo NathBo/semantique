@@ -68,6 +68,20 @@ type bool_binary_op =
   | AST_OR            (* e || e *)
 
 
+let apply_int_bin_op op a b = match op with
+  | AST_PLUS -> a+b
+  | AST_MINUS -> a-b
+  | AST_MULTIPLY -> a*b
+  | AST_DIVIDE -> a/b
+  | AST_MODULO when b>0 -> a mod b
+  | AST_MODULO -> -(a mod b)
+
+  
+let apply_int_un_op op a = match op with
+| AST_UNARY_PLUS -> a
+| AST_UNARY_MINUS -> -a
+
+
 (* expressions *)
 
 type int_expr =

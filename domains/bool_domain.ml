@@ -11,6 +11,10 @@ module BOOL_DOMAIN =
     (* an element of type t abstracts a set of integers *)
 
     (* unrestricted value: [-oo,+oo] *)
+
+    type t = bool_Set
+
+
     let top  = TrueOrFalse
 
     (* bottom value: empty set *)

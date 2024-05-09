@@ -28,7 +28,14 @@ module BOOL_DOMAIN =
     | AST_NOT -> const (not a)
 
     (* binary operation *)
-    let binary: t -> t -> int_binary_op -> t
+    let binary a b op = match (op,a,b) with
+      | (AST_AND,False,_) | (AST_AND,_,False) -> False
+      | (AST_AND,TrueOrFalse,_) | (AST_AND,_,TrueOrFalse) -> TrueOrFalse
+      | (AST_AND,True,True) -> True
+      | (AST_OR,True,_) | (AST_OR,_,True) -> True
+      | (AST_OR,TrueOrFalse,_) | (AST_OR,_,TrueOrFalse) -> TrueOrFalse
+      | (AST_OR,False,False) -> False
+      | _ -> Neither
 
 
     (* comparison *)
@@ -40,7 +47,9 @@ module BOOL_DOMAIN =
        a safe, but not precise implementation, would be:
        compare x y op = (x,y)
      *)
-    let compare: t -> t -> compare_op -> (t * t)
+    (*let compare: t -> t -> compare_op -> (t * t)*)
+
+    (*imo ya pas besoin vu qu'on a pas le droit de comparer des bool*)
 
 
     (* backards unary operation *)
@@ -49,7 +58,12 @@ module BOOL_DOMAIN =
        i.e., we fiter the abstract values x knowing the result r of applying
        the operation on x
      *)
-    let bwd_unary: t -> int_unary_op -> t -> t
+    let bwd_unary x op r = match (x,op,r) with
+      | (False,AST_NOT,False) | (True, AST_NOT, True) -> Neither
+      | (_,AST_NOT,False) -> True
+      | (_,AST_NOT,True) -> False
+      | (_,AST_NOT,TrueOrFalse) -> TrueOrFalse
+      | _ -> Neither
 
      (* backward binary operation *)
      (* [bwd_binary x y op r] returns (x',y') where

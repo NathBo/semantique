@@ -37,18 +37,18 @@ module DOMAIN =
     type t = VD.t Env.t
 
     (* initial environment, with all variables initialized to 0 *)
-    let init (var_list:var list) = Env.of_list (List.map (fun x -> (x,VD.const 0)) var_list)
+    let init (var_list:var list) = Env.of_list (List.map (fun x -> (x,VD.const Z.zero)) var_list)
 
     (* empty set of environments *)
     let bottom = Env.empty
 
 
     let rec evaluate env int_expr = match int_expr with
-      | CFG_int_const n -> VD.const (Z.to_int n)
+      | CFG_int_const n -> VD.const n
       | CFG_int_var v -> Env.find v env
       | CFG_int_unary (op,i) -> VD.unary (evaluate env i) op
       | CFG_int_binary (op,i1,i2) -> VD.binary (evaluate env i1) (evaluate env i2) op
-      | CFG_int_rand (n1,n2) -> VD.rand (Z.to_int n1) (Z.to_int n2)
+      | CFG_int_rand (n1,n2) -> VD.rand n1 n2
 
 
     (* assign an integer expression to a variable *)
@@ -56,28 +56,28 @@ module DOMAIN =
       Env.add var (evaluate env int_expr) env
 
     (* filter environments to keep only those satisfying the boolean expression *)
-    let guard: t -> bool_expr -> t
+    let guard: t -> bool_expr -> t = failwith "pas implémenté"
 
     (* abstract join *)
-    let join: t -> t -> t
+    let join: t -> t -> t = failwith "pas implémenté"
 
     (* abstract meet *)
-    let meet: t -> t -> t
+    let meet: t -> t -> t = failwith "pas implémenté"
 
     (* widening *)
-    let widen: t -> t -> t
+    let widen: t -> t -> t = failwith "pas implémenté"
 
     (* narrowing *)
-    let narrow: t -> t -> t
+    let narrow: t -> t -> t = failwith "pas implémenté"
 
     (* whether an abstract element is included in another one *)
-    let subset: t -> t -> bool
+    let subset: t -> t -> bool = failwith "pas implémenté"
 
     (* whether the abstract element represents the empty set *)
-    let is_bottom: t -> bool
+    let is_bottom: t -> bool = failwith "pas implémenté"
 
     (* prints *)
-    let print: Format.formatter -> t -> unit
+    let print: Format.formatter -> t -> unit = failwith "pas implémenté"
 
   end
 

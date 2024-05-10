@@ -55,29 +55,59 @@ module DOMAIN =
     let assign env var int_expr = 
       Env.add var (evaluate env int_expr) env
 
-    (* filter environments to keep only those satisfying the boolean expression *)
-    let guard: t -> bool_expr -> t = failwith "pas implémenté"
 
     (* abstract join *)
-    let join: t -> t -> t = failwith "pas implémenté"
+    let join a b =
+      let rec aux _ vd1 vd2 =
+        Some (VD.join vd1 vd2) in
+      Env.union aux a b
 
     (* abstract meet *)
-    let meet: t -> t -> t = failwith "pas implémenté"
+    let meet a b =
+      let rec aux _ o_vd1 o_vd2 = match o_vd1,o_vd2 with
+      | (_,None) | (None,_) -> None
+      | (Some vd1,Some vd2) ->  Some (VD.meet vd1 vd2) in
+      Env.merge aux a b
 
     (* widening *)
     let widen: t -> t -> t = failwith "pas implémenté"
 
     (* narrowing *)
-    let narrow: t -> t -> t = failwith "pas implémenté"
+    let narrow a b =
+      let rec aux _ o_vd1 o_vd2 = match o_vd1,o_vd2 with
+      | (_,None) | (None,_) -> None
+      | (Some vd1,Some vd2) ->  Some (VD.narrow vd1 vd2) in
+      Env.merge aux a b
+
+
+    (* filter environments to keep only those satisfying the boolean expression *)
+    let rec guard a bool_expr = match bool_expr with
+      | CFG_bool_const b -> if b then a else Env.empty
+      | CFG_bool_rand -> failwith "je sais pas, fais comme tu le sens sur les brand"
+      | CFG_bool_unary (AST_NOT,expr) -> narrow a (guard a expr)
+      | CFG_bool_binary (op,e1,e2) -> begin match op with
+        | AST_AND -> meet (guard a e1) (guard a e2)
+        | AST_OR -> join (guard a e1) (guard a e2)
+        end
+      | CFG_compare (op,i1,i2) -> failwith "compliqué"
+
 
     (* whether an abstract element is included in another one *)
-    let subset: t -> t -> bool = failwith "pas implémenté"
+    let subset a b =
+      let rec aux v vd =
+        Env.mem v b && VD.subset vd (Env.find v b) in
+      Env.for_all aux a
 
     (* whether the abstract element represents the empty set *)
-    let is_bottom: t -> bool = failwith "pas implémenté"
+    let is_bottom = Env.is_empty
 
     (* prints *)
-    let print: Format.formatter -> t -> unit = failwith "pas implémenté"
+    let print fmt map =
+      Format.fprintf fmt "{@[";
+      Env.iter (fun key value ->
+        Format.fprintf fmt "%s -> %a;@ " key.var_name VD.print value
+      ) map;
+      Format.fprintf fmt "@]}"
 
   end
 

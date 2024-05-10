@@ -69,20 +69,20 @@ type bool_binary_op =
 
 
 let apply_int_bin_op op a b = match op with
-  | AST_PLUS -> a+b
-  | AST_MINUS -> a-b
-  | AST_MULTIPLY -> a*b
-  | AST_DIVIDE -> a/b
-  | AST_MODULO when b>0 -> a mod b
-  | AST_MODULO -> -(a mod b)
+  | AST_PLUS -> Z.(+) a b
+  | AST_MINUS -> Z.(-) a b
+  | AST_MULTIPLY -> Z.( * ) a b
+  | AST_DIVIDE -> Z.(/) a b
+  | AST_MODULO when Z.gt b Z.zero -> Z.(mod) a b
+  | AST_MODULO -> Z.(~-)(Z.(mod) a b)
 
 
 let apply_int_un_op op a = match op with
 | AST_UNARY_PLUS -> a
-| AST_UNARY_MINUS -> -a
+| AST_UNARY_MINUS -> Z.(~-) a
 
 
-let apply_compare_op op a b = match op with
+let apply_compare_op op (a:Z.t) b = match op with
 | AST_EQUAL -> a=b
 | AST_NOT_EQUAL -> a<>b
 | AST_LESS -> a<b

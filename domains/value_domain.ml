@@ -16,7 +16,7 @@ open Abstract_syntax_tree
 module IntSet = Set.Make( 
   struct
     let compare = compare
-    type t = int
+    type t = Z.t
   end )
 
 
@@ -42,10 +42,10 @@ module VALUE_DOMAIN =
       let rec aux a b s =
         if a>b
         then s
-        else IntSet.add a (aux (a+1) b s) in
+        else IntSet.add a (aux (Z.(+) a Z.one) b s) in
       (aux a b IntSet.empty)
 
-    let top = rand min_int max_int
+    let top = rand (Z.of_int min_int) (Z.of_int max_int)
 
 
     (* unary operation *)
@@ -112,7 +112,7 @@ module VALUE_DOMAIN =
     (* print abstract element *)
     let print fmt a =
       let rec aux fmt x =
-        Format.fprintf fmt "%i " x in
+        Z.pp_print fmt x in
       Format.fprintf fmt "IntSet : ";
       IntSet.iter (aux fmt) a;
       Format.fprintf fmt "\n"

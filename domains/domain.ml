@@ -80,16 +80,27 @@ module DOMAIN =
       Env.merge aux a b
 
 
+    (*ne laisse pas passer les valeurs des variables qui feraient que int_expr ne serait pas à valeur dans vd*)
+    let rec filter env int_expr vd = match int_expr with
+    | CFG_int_const z -> if VD.subset (VD.const z) vd then env else bottom
+    | CFG_int_rand (a,b) -> if VD.subset (VD.rand a b) vd then env else bottom
+    | CFG_int_var v -> Env.add v (VD.meet (Env.find v env) vd) env
+    | CFG_int_unary (op,e) -> filter env e (VD.bwd_unary (evaluate env e) op vd)   (*jpense c bon mais jsuis pas sur*)
+    | CFG_int_binary (op,e1,e2) -> let vd1,vd2 = (VD.bwd_binary (evaluate env e1) (evaluate env e2) op vd) in
+      filter (filter env e1 vd1) e2 vd2
+
+
     (* filter environments to keep only those satisfying the boolean expression *)
     let rec guard a bool_expr = match bool_expr with
       | CFG_bool_const b -> if b then a else Env.empty
-      | CFG_bool_rand -> failwith "je sais pas, fais comme tu le sens sur les brand"
+      | CFG_bool_rand -> failwith "je sais pas, fais comme tu le sens sur les brand (et je parle pas du champion de League of Legends MDRRRRRR !!!!!!!)"
       | CFG_bool_unary (AST_NOT,expr) -> narrow a (guard a expr)
       | CFG_bool_binary (op,e1,e2) -> begin match op with
         | AST_AND -> meet (guard a e1) (guard a e2)
         | AST_OR -> join (guard a e1) (guard a e2)
         end
-      | CFG_compare (op,i1,i2) -> failwith "compliqué"
+      | CFG_compare (op,e1,e2) -> let vd1,vd2 = (VD.compare (evaluate a e1) (evaluate a e2) op) in
+        filter (filter a e1 vd1) e2 vd2
 
 
     (* whether an abstract element is included in another one *)

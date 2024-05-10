@@ -75,22 +75,6 @@ module VALUE_DOMAIN =
       (IntSet.fold (aux y) x IntSet.empty, IntSet.fold (aux x) y IntSet.empty)
 
 
-    (* backards unary operation *)
-    (* [bwd_unary x op r] return x':
-       - x' abstracts the set of v in x such as op v is in r
-       i.e., we fiter the abstract values x knowing the result r of applying
-       the operation on x
-     *)
-    let bwd_unary = failwith "pas implemente"
-
-     (* backward binary operation *)
-     (* [bwd_binary x y op r] returns (x',y') where
-       - x' abstracts the set of v  in x such that v op v' is in r for some v' in y
-       - y' abstracts the set of v' in y such that v op v' is in r for some v  in x
-       i.e., we filter the abstract values x and y knowing that, after
-       applying the operation op, the result is in r
-      *)
-    let bwd_binary = failwith "pas implemente"
 
 
     (* set-theoretic operations *)
@@ -108,6 +92,31 @@ module VALUE_DOMAIN =
 
     (* check the emptiness of the concretization *)
     let is_bottom = IntSet.is_empty
+
+    (* backards unary operation *)
+    (* [bwd_unary x op r] return x':
+       - x' abstracts the set of v in x such as op v is in r
+       i.e., we fiter the abstract values x knowing the result r of applying
+       the operation on x
+     *)
+    let bwd_unary x op r =
+      meet (IntSet.map (apply_int_un_op op) x) r
+
+    (* backward binary operation *)
+    (* [bwd_binary x y op r] returns (x',y') where
+      - x' abstracts the set of v  in x such that v op v' is in r for some v' in y
+      - y' abstracts the set of v' in y such that v op v' is in r for some v  in x
+      i.e., we filter the abstract values x and y knowing that, after
+      applying the operation op, the result is in r
+      *)
+    let bwd_binary x y op r =   (*tres potentiellement des erreurs ds cette fonction*)
+      let works op elt z =
+        IntSet.mem (apply_int_bin_op op elt z) r in
+      let rec aux other_set elt acc =
+        if IntSet.exists (works op elt) other_set
+        then IntSet.add elt acc
+        else acc in
+      (IntSet.fold (aux y) x IntSet.empty, IntSet.fold (aux x) y IntSet.empty)
 
     (* print abstract element *)
     let print fmt a =

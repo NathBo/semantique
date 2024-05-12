@@ -37,7 +37,7 @@ module DOMAIN =
     type t = VD.t Env.t
 
     (* initial environment, with all variables initialized to 0 *)
-    let init (var_list:var list) = Env.of_list (List.map (fun x -> (x,VD.const Z.zero)) var_list)
+    let init (var_list:var list) = List.fold_left (fun env key -> Env.add key (VD.const Z.zero) env) Env.empty var_list
 
     (* empty set of environments *)
     let bottom = Env.empty

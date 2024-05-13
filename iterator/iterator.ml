@@ -6,6 +6,8 @@
 
 open Frontend
 open Cfg
+open! Domains
+open! Domain
 
 let eval_bool_expr bexpr = match bexpr with
   | CFG_bool_const b -> b
@@ -20,7 +22,11 @@ let iterate filename cfg =
   let _ = Random.self_init () in
   ignore filename; (* TODO *)
 
-  (* let abstracts_values = failwith "un truc pas clair qui depend de domaine" in        TODO *)
+
+  let domains = DOMAIN.init cfg.cfg_vars in
+  ignore domains;
+  
+
   let worklist = ref [ cfg.cfg_init_entry ; get_main_node cfg ] in (* TODO add the main *)
 
   while !worklist <> [] do

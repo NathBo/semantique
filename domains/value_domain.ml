@@ -45,7 +45,7 @@ module VALUE_DOMAIN =
         else IntSet.add a (aux (Z.(+) a Z.one) b s) in
       (aux a b IntSet.empty)
 
-    let top = failwith "pas de top pour le value_domain"
+    let top () = failwith "pas de top pour le value_domain"
 
 
     (* unary operation *)
@@ -82,7 +82,7 @@ module VALUE_DOMAIN =
     let meet = IntSet.inter
 
     (* widening *)
-    let widen = failwith "pas implemente"
+    let widen () = failwith "pas implemente widen"
 
     (* narrowing *)
     let narrow = IntSet.diff

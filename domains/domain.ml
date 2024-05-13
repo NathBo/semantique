@@ -70,7 +70,7 @@ module DOMAIN =
       Env.merge aux a b
 
     (* widening *)
-    let widen: t -> t -> t = failwith "pas implémenté"
+    let widen () = failwith "pas implémenté widen"
 
     (* narrowing *)
     let narrow a b =

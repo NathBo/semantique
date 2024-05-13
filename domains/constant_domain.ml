@@ -86,16 +86,27 @@ type cst = Bottom | Top | Const of Z.t
      | _ -> Top
  
      (* widening *)
-     let widen a b = failwith "pas implemente widen"
+     let widen a b = Top
  
      (* narrowing *)
-     let narrow = IntSet.diff
- 
+     let narrow a b = match a,b with
+     | Bottom,_ | _,Top -> Bottom
+     | Top,_ -> Top
+     | a,Bottom -> a
+     | Const(n1),Const(n2) when n1 = n2 -> Bottom
+     | Const(_),Const(_) -> a
+
+
      (* subset inclusion of concretizations *)
-     let subset = IntSet.subset
+     let subset a b = match a,b with
+     | Bottom,_ | _,Top -> true
+     | Top,_ -> false
+     | _,Bottom -> false
+     | Const(n1),Const(n2) when n1 = n2 -> true
+     | Const(_),Const(_) -> false
  
      (* check the emptiness of the concretization *)
-     let is_bottom = IntSet.is_empty
+     let is_bottom a = a = Bottom
  
      (* backards unary operation *)
      (* [bwd_unary x op r] return x':
@@ -123,12 +134,10 @@ type cst = Bottom | Top | Const of Z.t
        (IntSet.fold (aux y) x IntSet.empty, IntSet.fold (aux x) y IntSet.empty)
  
      (* print abstract element *)
-     let print fmt a =
-       let rec aux fmt x =
-         Z.pp_print fmt x in
-       Format.fprintf fmt "IntSet : ";
-       IntSet.iter (aux fmt) a;
-       Format.fprintf fmt "\n"
+     let print fmt a = match a with
+     | Top -> Format.fprintf fmt "Top";
+     | Bottom -> Format.fprintf fmt "Bottom";
+     | Const n -> Format.fprintf fmt "%i" (Z.to_int n);
  
  end
  

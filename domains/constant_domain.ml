@@ -114,8 +114,10 @@ type cst = Bottom | Top | Const of Z.t
         i.e., we fiter the abstract values x knowing the result r of applying
         the operation on x
       *)
-     let bwd_unary x op r =
-       meet (IntSet.map (apply_int_un_op op) x) r
+     let bwd_unary x op r = match x with
+      | Const n when subset (Const (apply_int_un_op op n)) r -> x
+      | Const _ -> Bottom
+      | _ -> meet x r
  
      (* backward binary operation *)
      (* [bwd_binary x y op r] returns (x',y') where
@@ -124,14 +126,25 @@ type cst = Bottom | Top | Const of Z.t
        i.e., we filter the abstract values x and y knowing that, after
        applying the operation op, the result is in r
        *)
-     let bwd_binary x y op r =   (*tres potentiellement des erreurs ds cette fonction*)
-       let works op elt z =
-         IntSet.mem (apply_int_bin_op op elt z) r in
-       let rec aux other_set elt acc =
-         if IntSet.exists (works op elt) other_set
-         then IntSet.add elt acc
-         else acc in
-       (IntSet.fold (aux y) x IntSet.empty, IntSet.fold (aux x) y IntSet.empty)
+     let bwd_binary x y op r =
+      let aux n nr b = match op with
+      | AST_PLUS -> Const (Z.(-) nr n)
+      | AST_MINUS when b -> Const(Z.(-) n nr )
+      | AST_MINUS -> Const(Z.(+) n nr )
+      | AST_MULTIPLY when n<>Z.zero && Z.(mod) nr n = Z.zero -> Const(Z.(/) nr n)
+      | AST_MULTIPLY -> Bottom
+      | AST_MODULO when not b && Z.abs nr>= Z.abs n -> Bottom     (*a%b<b*)
+      | AST_MODULO when b && Z.abs nr > Z.abs n -> Bottom          (*a/b<=a*)
+      | _ -> Top in
+      match x,y,r with
+      | Const(n1),Const(n2),_ when subset (Const (apply_int_bin_op op n1 n2)) r -> (x,y)
+      | Const(_),Const(_),_ -> (Bottom,Bottom)
+      | Const(n),Top,Const(nr) -> let a = aux n nr true in if a=Bottom then (Bottom,Bottom) else Const(n),a
+      | Top,Const(n),Const(nr) -> let a = aux n nr false in if a=Bottom then (Bottom,Bottom) else a,Const(n)
+      | Const(n),Top,Top -> Const(n),Top
+      | Top,Const(n),Top -> Top,Const(n)
+      | _,_,Bottom | _,Bottom,_ | Bottom,_,_ -> Bottom,Bottom
+      | Top,Top,_ -> Top,Top
  
      (* print abstract element *)
      let print fmt a = match a with

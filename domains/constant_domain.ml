@@ -60,19 +60,30 @@ type cst = Bottom | Top | Const of Z.t
         a safe, but not precise implementation, would be:
         compare x y op = (x,y)
       *)
-     let compare x y op =
-       let rec aux other_set elt acc =
-         if IntSet.exists (apply_compare_op op elt) other_set
-         then IntSet.add elt acc
-         else acc in
-       (IntSet.fold (aux y) x IntSet.empty, IntSet.fold (aux x) y IntSet.empty)
+     let compare x y op = match (x,y) with
+      | Bottom,_ | _,Bottom -> (Bottom,Bottom)
+      | Const(a),Const(b) when apply_compare_op op a b -> (x,y)
+      | Const(_),Const(_) -> (Bottom,Bottom)
+      | _ -> (Top,Top)
  
  
  
  
      (* set-theoretic operations *)
-     let join = IntSet.union
-     let meet = IntSet.inter
+     let join a b = match a,b with
+      | Top,_ | _,Top -> Top
+      | Const(n1),Const(n2) when n1 = n2 -> Const(n1)
+      | Const(_),Const(_) -> Top
+      | Const(n),Bottom | Bottom,Const(n) -> Const(n)
+      | _ -> Bottom
+
+
+     let meet a b = match a,b with
+     | Bottom,_ | _,Bottom -> Bottom
+     | Const(n1),Const(n2) when n1 = n2 -> Const(n1)
+     | Const(_),Const(_) -> Bottom
+     | Const(n),Top | Top,Const(n) -> Const(n)
+     | _ -> Top
  
      (* widening *)
      let widen a b = failwith "pas implemente widen"

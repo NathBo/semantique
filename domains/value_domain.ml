@@ -45,7 +45,7 @@ module VALUE_DOMAIN =
         else IntSet.add a (aux (Z.(+) a Z.one) b s) in
       (aux a b IntSet.empty)
 
-    let top = rand (Z.of_int min_int) (Z.of_int max_int)
+    let top = failwith "pas de top pour le value_domain"
 
 
     (* unary operation *)

@@ -9,6 +9,9 @@ open Cfg
 open! Domains
 open! Domain
 
+
+module DOMAIN = Domain.DOMAIN_FUNCTOR(Concrete_domain.CONCRETE_DOMAIN)
+
 let eval_bool_expr bexpr = match bexpr with
   | CFG_bool_const b -> b
   | _ -> failwith "TODO bool"

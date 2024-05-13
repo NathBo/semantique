@@ -7,7 +7,6 @@
 open Frontend
 open! Cfg
 
-module VD = Value_domain.VALUE_DOMAIN
 
 (* Signature for the variables *)
 
@@ -27,13 +26,14 @@ module Env = Map.Make(
  *)
 
 
-module DOMAIN =
+module DOMAIN_FUNCTOR (VD:Value_domain.VALUE_DOMAIN) =
   struct
 
     (* type of abstract elements *)
     (* an element of type t abstracts a set of mappings from variables
        to integers
      *)
+
     type t = VD.t Env.t
 
     (* initial environment, with all variables initialized to 0 *)

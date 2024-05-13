@@ -14,7 +14,24 @@
  
  
 type sgn = Zero | Minus | Plus | StMinus | StPlus | SBot | STop 
- 
+
+
+let sign_minus s = match s with
+  | Zero -> Zero
+  | Plus -> Minus
+  | Minus -> Plus
+  | StPlus -> StMinus
+  | StMinus -> StPlus
+  | _ -> s
+
+let is_minus s = match s with
+   | Minus | StMinus -> true
+   | _ -> false
+
+let is_plus s = match s with
+  | Plus | StPlus -> true
+  | _ -> false
+  
  
  module SIGN_DOMAIN : Value_domain.VALUE_DOMAIN =
    struct
@@ -56,16 +73,25 @@ type sgn = Zero | Minus | Plus | StMinus | StPlus | SBot | STop
  
  
      (* unary operation *)
-     let unary a op = match a with
-      | Const n -> Const (apply_int_un_op op n)
-      | a -> a
+     let unary a op = match op with
+        | AST_UNARY_PLUS -> a
+        | AST_UNARY_MINUS -> sign_minus a
  
      (* binary operation *)
-     let binary a b op = match a,b with
-      | Const a, Const b -> Const (apply_int_bin_op op a b)
-      | Bottom,_ | _,Bottom -> Bottom
-      | _ -> Top
- 
+     let rec binary a b op = match op,a,b with
+        | _,SBot,_ | _,_,SBot -> SBot
+        | _,STop,_ | _,_,STop -> STop
+        | AST_PLUS,Minus,StMinus | AST_PLUS,StMinus,Minus | AST_PLUS,StMinus,StMinus -> StMinus
+        | AST_PLUS,Plus,StPlus | AST_PLUS,StPlus,Plus | AST_PLUS,StPlus,StPlus -> StPlus
+        | AST_PLUS,Plus,Plus -> Plus
+        | AST_PLUS,Minus,Minus -> Minus
+        | AST_PLUS,_,_ -> STop
+        | AST_MINUS,_,_ -> binary a (sign_minus b) AST_PLUS
+        | AST_MULTIPLY,Zero,_ | AST_MULTIPLY,_,Zero | AST_DIVIDE,Zero,_ -> Zero
+        | AST_MULTIPLY,StMinus,StMinus | AST_MULTIPLY,StPlus,StPlus -> StPlus
+        | AST_MULTIPLY,StMinus,StPlus | AST_MULTIPLY,StPlus,StMinus -> StMinus
+        | AST_MULTIPLY,a,b | AST_DIVIDE,a,b | AST_MODULO,a,b when is_minus a && is_plus b || (is_plus a && is_minus b) -> Minus
+        | AST_MULTIPLY,_,_ | AST_DIVIDE,_,_ | AST_MODULO,_,_ -> Plus
  
      (* comparison *)
      (* [compare x y op] returns (x',y') where

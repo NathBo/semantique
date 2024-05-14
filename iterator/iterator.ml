@@ -56,10 +56,9 @@ module ITERATOR_FONCTOR(VD:Value_domain.VALUE_DOMAIN) =
                 let newVal = match arc.arc_inst with
                     | CFG_skip _ -> curEnv 
                     | CFG_assign (var,iexpr) -> DOMAIN.assign curEnv var iexpr
-                    | CFG_guard bexpr -> ignore bexpr; failwith "TODO guard"
+                    | CFG_guard bexpr -> DOMAIN.guard curEnv bexpr
                     | CFG_assert (bexpr,ext) ->
                             let subEnv = DOMAIN.guard curEnv bexpr in
-                            DOMAIN.print Format.std_formatter subEnv;
                             if subEnv = DOMAIN.bottom then
                                 print_endline ("File "^filename^", line "^(string_of_int (fst ext).pos_lnum)^": Assertion failure")
                             ; curEnv

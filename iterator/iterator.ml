@@ -9,9 +9,6 @@ open Cfg
 open! Domains
 open! Domain
 
-
-(*module DOMAIN = Domain.DOMAIN_FUNCTOR(Concrete_domain.CONCRETE_DOMAIN) *)
-
 let eval_bool_expr bexpr = match bexpr with
   | CFG_bool_const b -> b
   | _ -> failwith "TODO bool"
@@ -23,14 +20,16 @@ let get_main_node cfg =
 module ITERATOR_FONCTOR(VD:Value_domain.VALUE_DOMAIN) = 
     struct
 
+    module DOMAIN = Domain.DOMAIN_FUNCTOR(VD) 
+
     let iterate filename cfg =
         print_endline "WARNING, this iterator doesn't support loops and goto (back)";
         let _ = Random.self_init () in
         ignore filename; (* TODO *)
 
 
-      (*  let domains = DOMAIN.init cfg.cfg_vars in
-        ignore domains; *)
+        let domains = DOMAIN.init cfg.cfg_vars in
+        ignore domains;
         
 
         let worklist = ref [ cfg.cfg_init_entry ; get_main_node cfg ] in

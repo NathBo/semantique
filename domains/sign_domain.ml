@@ -31,6 +31,11 @@ let is_minus s = match s with
 let is_plus s = match s with
   | Plus | StPlus -> true
   | _ -> false
+
+
+let contains_zero s = match s with
+| STop | Zero | Plus | Minus -> true
+| _ -> false
   
  
  module SIGN_DOMAIN : Value_domain.VALUE_DOMAIN =
@@ -93,7 +98,60 @@ let is_plus s = match s with
         | AST_MULTIPLY,a,b | AST_DIVIDE,a,b | AST_MODULO,a,b when is_minus a && is_plus b || (is_plus a && is_minus b) -> Minus
         | AST_MULTIPLY,_,_ | AST_DIVIDE,_,_ | AST_MODULO,_,_ -> Plus
  
-     (* comparison *)
+     
+ 
+ 
+ 
+ 
+     (* set-theoretic operations *)
+     let join a b =
+      match a, b with
+      | STop, _ | _, STop -> STop
+      | a, b when is_minus a && is_plus b -> STop
+      | b, a when is_minus a && is_plus b -> STop
+      | a, b when a = b -> a
+      | Zero, a when is_minus a -> Minus
+      | a, Zero when is_minus a -> Minus
+      | Zero, a when is_plus a -> Plus
+      | a, Zero when is_plus a -> Plus
+      | _ -> failwith "il manque un cas dans les join"
+    
+      
+
+
+     let meet a b =
+      match a, b with
+      | SBot, _ | _, SBot -> STop
+      | a, b when a = b -> a
+      | Zero,a when contains_zero a -> Zero
+      | a,Zero when contains_zero a -> Zero
+      | Plus,Minus | Minus,Plus -> Zero
+      | a, b when is_minus a && is_plus b -> SBot
+      | b,a when is_minus a && is_plus b -> SBot
+      | _ -> failwith "il manque un cas dans les meet"
+
+
+
+ (* narrowing *)
+    let narrow a b = match a,b with
+      | SBot,_ | _,STop -> SBot
+      | a,SBot -> a
+      | a,b when a=b -> SBot
+      | STop,a when not (contains_zero a) -> join (sign_minus a) Zero
+      | STop,Minus -> StPlus
+      | STop,Plus -> StMinus
+      | STop,_ -> failwith "normalement n'arrive pas dans narrow"
+      | Plus,Zero | Plus,Minus -> StPlus
+      | Minus,Zero | Minus,Plus -> StMinus
+      | Plus,StPlus -> Zero
+      | Minus,StMinus -> Zero
+      | Plus,StMinus | Minus,StPlus -> a
+      | _ -> failwith "il manque des cas dans narrow"
+
+
+
+
+(* comparison *)
      (* [compare x y op] returns (x',y') where
         - x' abstracts the set of v  in x such that v op v' is true for some v' in y
         - y' abstracts the set of v' in y such that v op v' is true for some v  in x
@@ -102,53 +160,26 @@ let is_plus s = match s with
         a safe, but not precise implementation, would be:
         compare x y op = (x,y)
       *)
-     let compare x y op = match (x,y) with
-      | Bottom,_ | _,Bottom -> (Bottom,Bottom)
-      | Const(a),Const(b) when apply_compare_op op a b -> (x,y)
-      | Const(_),Const(_) -> (Bottom,Bottom)
-      | _ -> (Top,Top)
- 
- 
- 
- 
-     (* set-theoretic operations *)
-     let join a b = match a,b with
-      | Top,_ | _,Top -> Top
-      | Const(n1),Const(n2) when n1 = n2 -> Const(n1)
-      | Const(_),Const(_) -> Top
-      | Const(n),Bottom | Bottom,Const(n) -> Const(n)
-      | _ -> Bottom
 
 
-     let meet a b = match a,b with
-     | Bottom,_ | _,Bottom -> Bottom
-     | Const(n1),Const(n2) when n1 = n2 -> Const(n1)
-     | Const(_),Const(_) -> Bottom
-     | Const(n),Top | Top,Const(n) -> Const(n)
-     | _ -> Top
+
+     let compare x y op = match op,x,y with
+      | AST_EQUAL,_,_ -> (meet x y, meet x y) 
+      | _ -> failwith "non"
+
+
  
      (* widening *)
-     let widen a b = Top
+     let widen a b = STop
  
-     (* narrowing *)
-     let narrow a b = match a,b with
-     | Bottom,_ | _,Top -> Bottom
-     | Top,_ -> Top
-     | a,Bottom -> a
-     | Const(n1),Const(n2) when n1 = n2 -> Bottom
-     | Const(_),Const(_) -> a
+  
 
 
      (* subset inclusion of concretizations *)
-     let subset a b = match a,b with
-     | Bottom,_ | _,Top -> true
-     | Top,_ -> false
-     | _,Bottom -> false
-     | Const(n1),Const(n2) when n1 = n2 -> true
-     | Const(_),Const(_) -> false
+     let subset a b = narrow a b = SBot
  
      (* check the emptiness of the concretization *)
-     let is_bottom a = a = Bottom
+     let is_bottom a = a = SBot
  
      (* backards unary operation *)
      (* [bwd_unary x op r] return x':

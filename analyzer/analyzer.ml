@@ -11,6 +11,10 @@
 *)
 
 open Frontend
+open Iterator
+open Domains
+
+module Iter_Concrete = ITERATOR_FONCTOR(Concrete_domain.CONCRETE_DOMAIN)
 
 (* parse filename *)
 let doit filename =
@@ -19,7 +23,8 @@ let doit filename =
   if !Options.verbose then
     Format.printf "%a" Cfg_printer.print_cfg cfg;
   Cfg_printer.output_dot !Options.cfg_out cfg;
-  Iterator.iterate filename cfg
+  Iter_Concrete.iterate filename cfg
+    
 
 
 (* parses arguments to get filename *)

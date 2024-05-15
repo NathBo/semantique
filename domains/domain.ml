@@ -99,8 +99,8 @@ module DOMAIN_FUNCTOR (VD:Value_domain.VALUE_DOMAIN) =
 
     (*ne laisse pas passer les valeurs des variables qui feraient que int_expr ne serait pas à valeur dans vd*)
     let rec filter env int_expr vd = match int_expr with
-    | CFG_int_const z -> if VD.subset (VD.const z) vd then env else bottom
-    | CFG_int_rand (a,b) -> if VD.subset (VD.rand a b) vd then env else bottom
+    | CFG_int_const z -> if VD.subset (VD.const z) vd then env else Env.map (fun x -> VD.bottom) env
+    | CFG_int_rand (a,b) -> if VD.subset (VD.rand a b) vd then env else Env.map (fun x -> VD.bottom) env
     | CFG_int_var v -> Env.add v (VD.meet (Env.find v env) vd) env
     | CFG_int_unary (op,e) -> filter env e (VD.bwd_unary (evaluate env e) op vd)   (*jpense c bon mais jsuis pas sur*)
     | CFG_int_binary (op,e1,e2) -> let vd1,vd2 = (VD.bwd_binary (evaluate env e1) (evaluate env e2) op vd) in
@@ -116,8 +116,13 @@ module DOMAIN_FUNCTOR (VD:Value_domain.VALUE_DOMAIN) =
         | AST_AND -> meet (guard a e1) (guard a e2)
         | AST_OR -> join (guard a e1) (guard a e2)
         end
-      | CFG_compare (op,e1,e2) -> let vd1,vd2 = (VD.compare (evaluate a e1) (evaluate a e2) op) in
-        filter (filter a e1 vd1) e2 vd2
+      | CFG_compare (op,e1,e2) -> begin let vd1,vd2 = (VD.compare (evaluate a e1) (evaluate a e2) op) in
+        print_endline "On a l'environnement :";
+        print_endline (to_string a);
+        print_endline "On a les valeurs de :";
+        print_endline (VD.to_string vd1);
+        print_endline (VD.to_string vd2);
+        let x = filter (filter a e1 vd1) e2 vd2 in print_endline "L'environnement final est :"; print_endline (to_string x); x end
 
 
     (* whether an abstract element is included in another one *)

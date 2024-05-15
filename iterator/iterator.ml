@@ -31,14 +31,9 @@ module ITERATOR_FONCTOR(VD:Value_domain.VALUE_DOMAIN) =
     let iterate filename cfg =
         print_endline "WARNING, this iterator doesn't support loops and goto (back)";
         let _ = Random.self_init () in
-        ignore filename; (* TODO *)
 
-
-        (*let env = DOMAIN.init cfg.cfg_vars in *)
-        (*let env = EnvMap.singleton cfg.cfg_init_entry (DOMAIN.init cfg.cfg_vars)  in *)
         let envs = ref (List.fold_left (fun map node -> NodeMap.add node DOMAIN.bottom map) NodeMap.empty cfg.cfg_nodes) in
         ignore envs;
-        
 
         let worklist = ref [ cfg.cfg_init_entry ; get_main_node cfg ] in
 
@@ -70,8 +65,6 @@ module ITERATOR_FONCTOR(VD:Value_domain.VALUE_DOMAIN) =
             DOMAIN.print Format.std_formatter update;
             Format.print_newline ();
 
-            
-            
             if true then begin (* TODO : if the value as changed *)
             List.iter (fun arc -> worklist := arc.arc_dst :: !worklist) node.node_out
             end

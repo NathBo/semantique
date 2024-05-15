@@ -45,7 +45,11 @@ module DOMAIN_FUNCTOR (VD:Value_domain.VALUE_DOMAIN) =
 
     let rec evaluate env int_expr = match int_expr with
       | CFG_int_const n -> VD.const n
-      | CFG_int_var v -> Env.find v env
+      | CFG_int_var v -> begin
+              match Env.find_opt v env with
+              | Some x -> x
+              | None -> VD.bottom
+          end
       | CFG_int_unary (op,i) -> VD.unary (evaluate env i) op
       | CFG_int_binary (op,i1,i2) -> VD.binary (evaluate env i1) (evaluate env i2) op
       | CFG_int_rand (n1,n2) -> VD.rand n1 n2

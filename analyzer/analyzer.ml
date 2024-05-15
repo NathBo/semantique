@@ -14,7 +14,7 @@ open Frontend
 open Iterator
 open Domains
 
-module Iter_Concrete = ITERATOR_FONCTOR(Concrete_domain.CONCRETE_DOMAIN)
+module Iter_Concrete = ITERATOR_FONCTOR(Constant_domain.CONSTANTDOMAIN)
 
 (* parse filename *)
 let doit filename =

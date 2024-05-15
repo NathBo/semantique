@@ -127,5 +127,11 @@ module DOMAIN_FUNCTOR (VD:Value_domain.VALUE_DOMAIN) =
       ) map;
       Format.fprintf fmt "@]}"
 
+    let to_string map =
+      let rep = ref "{" in
+      Env.iter (fun key value ->
+        rep := !rep ^  key.var_name ^" -> " ^ VD.to_string value ^ ";"
+      ) map;
+
   end
 

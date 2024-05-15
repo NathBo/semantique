@@ -126,6 +126,8 @@ module CONCRETE_DOMAIN : Value_domain.VALUE_DOMAIN =
       IntSet.iter (aux fmt) a;
       Format.fprintf fmt "\n"
 
+    let to_string a = "IntSet"
+
 end
 
 

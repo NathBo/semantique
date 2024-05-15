@@ -148,9 +148,14 @@ type cst = Bottom | Top | Const of Z.t
  
      (* print abstract element *)
      let print fmt a = match a with
-     | Top -> Format.fprintf fmt "Top";
-     | Bottom -> Format.fprintf fmt "Bottom";
-     | Const n -> Format.fprintf fmt "%i" (Z.to_int n);
+     | Top -> Format.fprintf fmt "Top"
+     | Bottom -> Format.fprintf fmt "Bottom"
+     | Const n -> Format.fprintf fmt "%i" (Z.to_int n)
+
+     let to_string a = match a with
+     | Top -> "Top"
+     | Bottom -> "Bottom"
+     | Const n -> string_of_int (Z.to_int n)
  
  end
  

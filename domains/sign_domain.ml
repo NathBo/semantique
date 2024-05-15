@@ -235,6 +235,15 @@ let contains_zero s = match s with
      | StPlus -> Format.fprintf fmt "StPlus"
      | StMinus -> Format.fprintf fmt "StMinus"
      | Zero -> Format.fprintf fmt "Zero"
+
+     let to_string a = match a with
+     | STop -> "Top"
+     | SBot -> "Bot"
+     | Plus -> "Plus"
+     | Minus -> "Minus"
+     | StPlus -> "StPlus"
+     | StMinus -> "StMinus"
+     | Zero -> "Zero"
  
  end
  

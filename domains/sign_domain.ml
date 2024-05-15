@@ -140,6 +140,7 @@ let contains_zero s = match s with
       | STop,a when not (contains_zero a) -> join (sign_minus a) Zero
       | STop,Minus -> StPlus
       | STop,Plus -> StMinus
+      | STop,Zero -> STop
       | STop,_ -> failwith "normalement n'arrive pas dans narrow"
       | Plus,Zero | Plus,Minus -> StPlus
       | Minus,Zero | Minus,Plus -> StMinus
@@ -163,9 +164,22 @@ let contains_zero s = match s with
 
 
 
-     let compare x y op = match op,x,y with
+     let rec compare x y op = match op,x,y with
+      | _,SBot,_ | _,_,SBot -> SBot,SBot
       | AST_EQUAL,_,_ -> (meet x y, meet x y) 
-      | _ -> failwith "non"
+      | AST_NOT_EQUAL,_,_ -> (narrow x y, narrow y x)
+      | AST_GREATER,_,_ -> let a,b = compare y x AST_LESS in (b,a)
+      | AST_GREATER_EQUAL,_,_ -> let a,b = compare y x AST_LESS_EQUAL in (b,a)
+      | AST_LESS,_,STop | AST_LESS_EQUAL,_,STop -> (x,STop)
+      | AST_LESS,STop,_ | AST_LESS_EQUAL,STop,_ -> (y,y)
+      | (AST_LESS,x,y) | (AST_LESS_EQUAL,x,y) when x = y -> (x,y)
+      | AST_LESS,Minus,Zero | AST_LESS,StMinus,Zero | AST_LESS_EQUAL,StMinus,Zero -> StMinus,Zero
+      | AST_LESS_EQUAL,Minus,Zero -> Minus,Zero
+      | AST_LESS_EQUAL,Zero,y when not (is_minus y) -> Zero,y
+      | AST_LESS,Zero,y when is_plus y -> Zero,StPlus
+      | _,Plus,StPlus | _,StPlus,Plus -> StPlus,StPlus
+      | AST_LESS,Plus,Minus -> Zero,Zero
+      | _ -> SBot,SBot
 
 
  

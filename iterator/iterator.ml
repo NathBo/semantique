@@ -63,7 +63,7 @@ module ITERATOR_FONCTOR(VD:Value_domain.VALUE_DOMAIN) =
                     | CFG_guard bexpr -> DOMAIN.guard curEnv bexpr
                     | CFG_assert (bexpr,ext) ->
                             let subEnv = DOMAIN.guard curEnv bexpr in
-                            if subEnv = DOMAIN.bottom then
+                            if subEnv <> curEnv then
                                 print_endline ("File "^filename^", line "^(string_of_int (fst ext).pos_lnum)^": Assertion failure")
                             ; curEnv
                     | CFG_call fct -> ignore fct; failwith "TODO call"

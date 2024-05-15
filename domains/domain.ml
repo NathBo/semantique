@@ -110,7 +110,10 @@ module DOMAIN_FUNCTOR (VD:Value_domain.VALUE_DOMAIN) =
       Env.for_all aux a
 
     (* whether the abstract element represents the empty set *)
-    let is_bottom = Env.is_empty
+    let is_bottom =
+      let aux _ x =
+        VD.is_bottom x in
+      Env.for_all aux  
 
     (* prints *)
     let print fmt map =

@@ -201,10 +201,8 @@ let contains_zero s = match s with
         i.e., we fiter the abstract values x knowing the result r of applying
         the operation on x
       *)
-     let bwd_unary x op r = match x with
-      | Const n when subset (Const (apply_int_un_op op n)) r -> x
-      | Const _ -> Bottom
-      | _ -> meet x r
+     let bwd_unary x op r = 
+      meet (unary x op) r
  
      (* backward binary operation *)
      (* [bwd_binary x y op r] returns (x',y') where
@@ -235,9 +233,13 @@ let contains_zero s = match s with
  
      (* print abstract element *)
      let print fmt a = match a with
-     | Top -> Format.fprintf fmt "Top";
-     | Bottom -> Format.fprintf fmt "Bottom";
-     | Const n -> Format.fprintf fmt "%i" (Z.to_int n);
+     | STop -> Format.fprintf fmt "Top"
+     | SBot -> Format.fprintf fmt "Bot"
+     | Plus -> Format.fprintf fmt "Plus"
+     | Minus -> Format.fprintf fmt "Minus"
+     | StPlus -> Format.fprintf fmt "StPlus"
+     | StMinus -> Format.fprintf fmt "StMinus"
+     | Zero -> Format.fprintf fmt "Zero"
  
  end
  

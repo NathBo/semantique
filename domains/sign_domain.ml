@@ -212,24 +212,19 @@ let contains_zero s = match s with
        applying the operation op, the result is in r
        *)
      let bwd_binary x y op r =
-      let aux n nr b = match op with
-      | AST_PLUS -> Const (Z.(-) nr n)
-      | AST_MINUS when b -> Const(Z.(-) n nr )
-      | AST_MINUS -> Const(Z.(+) n nr )
-      | AST_MULTIPLY when n<>Z.zero && Z.(mod) nr n = Z.zero -> Const(Z.(/) nr n)
-      | AST_MULTIPLY -> Bottom
-      | AST_MODULO when not b && Z.abs nr>= Z.abs n -> Bottom     (*a%b<b*)
-      | AST_MODULO when b && Z.abs nr > Z.abs n -> Bottom          (*a/b<=a*)
-      | _ -> Top in
-      match x,y,r with
-      | Const(n1),Const(n2),_ when subset (Const (apply_int_bin_op op n1 n2)) r -> (x,y)
-      | Const(_),Const(_),_ -> (Bottom,Bottom)
-      | Const(n),Top,Const(nr) -> let a = aux n nr true in if a=Bottom then (Bottom,Bottom) else Const(n),a
-      | Top,Const(n),Const(nr) -> let a = aux n nr false in if a=Bottom then (Bottom,Bottom) else a,Const(n)
-      | Const(n),Top,Top -> Const(n),Top
-      | Top,Const(n),Top -> Top,Const(n)
-      | _,_,Bottom | _,Bottom,_ | Bottom,_,_ -> Bottom,Bottom
-      | Top,Top,_ -> Top,Top
+      let repx = ref SBot in
+      let repy = ref SBot in
+      let l = [|StMinus;Zero;StPlus|] in
+      for i=0 to 2 do
+        if subset (binary l.(i) y op) r
+        then repx := join !repx l.(i)
+      done;
+      for i=0 to 2 do
+        if subset (binary x l.(i) op) r
+        then repy := join !repy l.(i)
+      done;
+      (!repx,!repy)
+
  
      (* print abstract element *)
      let print fmt a = match a with

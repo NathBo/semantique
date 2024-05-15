@@ -24,6 +24,11 @@ type cst = Bottom | Top | Const of Z.t
      (* an element of type t abstracts a set of integers *)
  
      type t = cst
+
+     let to_string a = match a with
+     | Top -> "Top"
+     | Bottom -> "Bottom"
+     | Const n -> string_of_int (Z.to_int n)
  
      (* unrestricted value: [-oo,+oo] *)
  
@@ -92,7 +97,7 @@ type cst = Bottom | Top | Const of Z.t
      let narrow a b = match a,b with
      | Bottom,_ | _,Top -> Bottom
      | Top,_ -> Top
-     | a,Bottom -> a
+     | a,Bottom -> (print_endline "on a rien change dans :";print_endline (to_string a);a)
      | Const(n1),Const(n2) when n1 = n2 -> Bottom
      | Const(_),Const(_) -> a
 
@@ -152,10 +157,6 @@ type cst = Bottom | Top | Const of Z.t
      | Bottom -> Format.fprintf fmt "Bottom"
      | Const n -> Format.fprintf fmt "%i" (Z.to_int n)
 
-     let to_string a = match a with
-     | Top -> "Top"
-     | Bottom -> "Bottom"
-     | Const n -> string_of_int (Z.to_int n)
  
  end
  

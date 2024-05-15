@@ -36,6 +36,13 @@ module DOMAIN_FUNCTOR (VD:Value_domain.VALUE_DOMAIN) =
 
     type t = VD.t Env.t
 
+    let to_string map =
+      let rep = ref "{" in
+      Env.iter (fun key value ->
+        rep := !rep ^  key.var_name ^" -> " ^ VD.to_string value ^ ";"
+      ) map;
+      !rep^"}"
+
     (* initial environment, with all variables initialized to 0 *)
     let init (var_list:var list) = List.fold_left (fun env key -> Env.add key (VD.const Z.zero) env) Env.empty var_list
 
@@ -78,10 +85,16 @@ module DOMAIN_FUNCTOR (VD:Value_domain.VALUE_DOMAIN) =
 
     (* narrowing *)
     let narrow a b =
+      print_endline "On narrow :";
+      print_endline (to_string a);
+      print_endline (to_string b);
       let rec aux _ o_vd1 o_vd2 = match o_vd1,o_vd2 with
       | (_,None) | (None,_) -> None
       | (Some vd1,Some vd2) ->  Some (VD.narrow vd1 vd2) in
-      Env.merge aux a b
+      let x = Env.merge aux a b in
+      print_endline "On obtient :";
+      prerr_endline (to_string x);
+      x
 
 
     (*ne laisse pas passer les valeurs des variables qui feraient que int_expr ne serait pas à valeur dans vd*)
@@ -96,9 +109,9 @@ module DOMAIN_FUNCTOR (VD:Value_domain.VALUE_DOMAIN) =
 
     (* filter environments to keep only those satisfying the boolean expression *)
     let rec guard a bool_expr = match bool_expr with
-      | CFG_bool_const b -> if b then a else Env.empty
+      | CFG_bool_const b -> if b then a else Env.map (fun x -> VD.bottom) a
       | CFG_bool_rand -> failwith "je sais pas, fais comme tu le sens sur les brand (et je parle pas du champion de League of Legends MDRRRRRR !!!!!!!)"
-      | CFG_bool_unary (AST_NOT,expr) -> narrow a (guard a expr)
+      | CFG_bool_unary (AST_NOT,expr) -> let x = narrow a (guard a expr) in let () = print_endline "ya un not qui donne :" in let () = print_endline (to_string x) in let () = print_endline "sachant qu'avant on avait :" in let () = print_endline (to_string (guard a expr)) in x
       | CFG_bool_binary (op,e1,e2) -> begin match op with
         | AST_AND -> meet (guard a e1) (guard a e2)
         | AST_OR -> join (guard a e1) (guard a e2)
@@ -127,11 +140,6 @@ module DOMAIN_FUNCTOR (VD:Value_domain.VALUE_DOMAIN) =
       ) map;
       Format.fprintf fmt "@]}"
 
-    let to_string map =
-      let rep = ref "{" in
-      Env.iter (fun key value ->
-        rep := !rep ^  key.var_name ^" -> " ^ VD.to_string value ^ ";"
-      ) map;
 
   end
 

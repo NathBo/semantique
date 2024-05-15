@@ -60,7 +60,7 @@ type cst = Bottom | Top | Const of Z.t
         a safe, but not precise implementation, would be:
         compare x y op = (x,y)
       *)
-     let compare x y op = print_endline "coucou";match (x,y) with
+     let compare x y op = match (x,y) with
       | Bottom,_ | _,Bottom -> (Bottom,Bottom)
       | Const(a),Const(b) when apply_compare_op op a b -> (x,y)
       | Const(_),Const(_) -> (print_endline "ya plus personne";(Bottom,Bottom))

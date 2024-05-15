@@ -34,3 +34,8 @@ run: all
 
 check: all
 	@./_build/default/analyzer/analyzer.exe test.c
+check-domain: all
+	@./_build/default/analyzer/analyzer.exe test.c --domain $(domain)
+# comme check mais on peut specifier le domaine
+#utiliser sous forme "make domain=constant check-domain"
+

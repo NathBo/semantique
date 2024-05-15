@@ -4,17 +4,12 @@
   Ecole normale supérieure, Paris, France / CNRS / INRIA
 *)
 
-(*
-  Simple driver: parses the file given as argument and prints it back.
-
-  You should modify this file to call your functions instead!
-*)
-
 open Frontend
 open Iterator
 open Domains
 
-module Iter_Concrete = ITERATOR_FONCTOR(Constant_domain.CONSTANTDOMAIN)
+module Iter_Constant = ITERATOR_FONCTOR(Constant_domain.CONSTANTDOMAIN)
+module Iter_Concrete = ITERATOR_FONCTOR(Concrete_domain.CONCRETE_DOMAIN)
 
 (* parse filename *)
 let doit filename =
@@ -23,8 +18,11 @@ let doit filename =
   if !Options.verbose then
     Format.printf "%a" Cfg_printer.print_cfg cfg;
   Cfg_printer.output_dot !Options.cfg_out cfg;
-  Iter_Concrete.iterate filename cfg
-    
+
+  match !Options.domain with
+    | "constant" -> Iter_Constant.iterate filename cfg
+    | "concrete" -> Iter_Concrete.iterate filename cfg
+    | _ ->          Iter_Constant.iterate filename cfg
 
 
 (* parses arguments to get filename *)

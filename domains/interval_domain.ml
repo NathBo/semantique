@@ -203,7 +203,7 @@ let print_num fmt a = match a with
      | AST_UNARY_MINUS -> meet (num_un_minus(fst x),num_un_minus(fst x)) r
  
 
-     
+
      (* backward binary operation *)
      (* [bwd_binary x y op r] returns (x',y') where
        - x' abstracts the set of v  in x such that v op v' is in r for some v' in y
@@ -211,27 +211,15 @@ let print_num fmt a = match a with
        i.e., we filter the abstract values x and y knowing that, after
        applying the operation op, the result is in r
        *)
-     let bwd_binary x y op r = match op,x,y with
-     | AST_DIVIDE,_,b | AST_MODULO,_,b when constains_zero b -> raise DivisionByZero
-     | _ ->
-      let aux n nr b = match op with
-      | AST_PLUS -> Const (Z.(-) nr n)
-      | AST_MINUS when b -> Const(Z.(-) n nr )
-      | AST_MINUS -> Const(Z.(+) n nr )
-      | AST_MULTIPLY when n<>Z.zero && Z.(mod) nr n = Z.zero -> Const(Z.(/) nr n)
-      | AST_MULTIPLY -> Bottom
-      | AST_MODULO when not b && Z.abs nr>= Z.abs n -> Bottom     (*a%b<b*)
-      | AST_MODULO when b && Z.abs nr > Z.abs n -> Bottom          (*a/b<=a*)
-      | _ -> Top in
-      match x,y,r with
-      | Const(n1),Const(n2),_ when subset (Const (apply_int_bin_op op n1 n2)) r -> (x,y)
-      | Const(_),Const(_),_ -> (Bottom,Bottom)
-      | Const(n),Top,Const(nr) -> let a = aux n nr true in if a=Bottom then (Bottom,Bottom) else Const(n),a
-      | Top,Const(n),Const(nr) -> let a = aux n nr false in if a=Bottom then (Bottom,Bottom) else a,Const(n)
-      | Const(n),Top,Top -> Const(n),Top
-      | Top,Const(n),Top -> Top,Const(n)
-      | _,_,Bottom | _,Bottom,_ | Bottom,_,_ -> Bottom,Bottom
-      | Top,Top,_ -> Top,Top
+     let bwd_binary x y op r = let a,b = x in let c,d = y in let e,f = r in if op=AST_DIVIDE && contains_zero y then raise DivisionByZero else match op with
+     | AST_PLUS -> (numbMax a (num_minus e c true),numbMin b (num_minus f d true)),(numbMax c (num_minus e a true),numbMin d (num_minus f b true))
+     | AST_MINUS -> (numbMax a (num_plus e c true),numbMin b (num_plus f d true)),(numbMax c (num_minus a e true),numbMin d (num_minus b f true))
+     | AST_MODULO -> x,y                      (*les intervalles et modulo marchent vraiment pas ensemble*)
+     | AST_DIVIDE -> meet x (binary r y AST_MULTIPLY),meet y (binary r x AST_MULTIPLY)
+     | AST_MULTIPLY -> meet x (binary r y AST_DIVIDE),meet y (binary r x AST_DIVIDE)
+
+
+
  
      (* print abstract element *)
      let print fmt a = Format.fprintf fmt "[%a,%a]" print_num (fst a) print_num (snd a)

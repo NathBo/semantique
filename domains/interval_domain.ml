@@ -13,29 +13,89 @@
  open Abstract_syntax_tree
  
  
-type interval = ITop | IBottom | Inter of Z.t*Z.t
+type number = MinusInfty | PlusInfty | N of Z.t
+
+type interval = number*number
 
 
-let contains_zero a = match a with
-  | ITop -> true
-  | Inter (a,b) when a <= Z.zero && b>=Z.zero -> true
-  | _ -> false
+let to_string_numb a = match a with
+| MinusInfty -> "-oo"
+| PlusInfty -> "+oo"
+| N n -> Z.to_string n
 
 
-let correct a = match a with
-| Inter(x,y) when x>y -> IBottom
-| _ -> a
+let inf_eq a b = match a,b with
+| MinusInfty,_ -> true
+| _,MinusInfty -> false
+| _,PlusInfty -> true
+| PlusInfty,_ -> false
+| N a,N b -> a<=b
+
+
+let sup_eq a b = match a,b with
+| PlusInfty,_ -> true
+| _,PlusInfty -> false
+| _,MinusInfty -> true
+| MinusInfty,_ -> false
+| N a,N b -> a>=b
+
+let inf a b = not (sup_eq a b)
+
+
+let sup a b = not (inf_eq a b)
+
+
+let zero = N Z.zero
+
+
+let contains_zero i =
+  fst i <= zero && snd i >= zero
+
+let numbMin a b = if inf a b then a else b
+
+let numbMax a b = if sup a b then a else b
+
+
+let num_un_minus a = match a with
+| MinusInfty -> PlusInfty
+| PlusInfty -> MinusInfty
+| N n -> N (Z.(~-) n)
+
+let num_plus a b round_up = match a,b with
+| N n1,N n2 -> N (Z.(+) n1 n2)
+| MinusInfty,PlusInfty | PlusInfty,MinusInfty -> if round_up then PlusInfty else MinusInfty
+| _,PlusInfty | PlusInfty,_ -> PlusInfty
+| _,MinusInfty | MinusInfty,_ -> MinusInfty
+
+let num_minus a b round_up = num_plus a (num_un_minus b) round_up
+
+
+let num_times a b = match a,b with
+| N n1,N n2 -> N (Z.( * ) n1 n2)
+| a,b when a=zero || b=zero -> zero
+| a,b when sup a zero && sup b zero -> PlusInfty
+| a,b when inf a zero && inf a zero -> PlusInfty
+| _ -> MinusInfty
+
+
+let num_divide a b = match a,b with
+| N n1,N n2 -> N (Z.(/) n1 n2)
+| _,PlusInfty | _,MinusInfty -> zero
+| PlusInfty,a when sup a zero -> PlusInfty
+| PlusInfty,_ -> MinusInfty
+| MinusInfty,a when inf a zero -> PlusInfty
+| MinusInfty,_ -> MinusInfty
 
 
 let rec minList l = match l with
   | [] -> failwith "non"
   | x::[] -> x
-  | x::q -> Z.min x (minList q)
+  | x::q -> numbMin x (minList q)
 
 let rec maxList l = match l with
   | [] -> failwith "non"
   | x::[] -> x
-  | x::q -> Z.max x (maxList q)
+  | x::q -> numbMax x (maxList q)
   
 
  
@@ -48,40 +108,36 @@ let rec maxList l = match l with
  
      type t = interval
 
-     let to_string a = match a with
-     | ITop -> "Top"
-     | IBottom -> "Bottom"
-     | Inter (a,b) -> "["^string_of_int (Z.to_int a)^","^string_of_int (Z.to_int a)^"]"
+     let to_string a = 
+     ("["^(to_string_numb (fst a))^","^(to_string_numb (snd a))^"]")
  
      (* unrestricted value: [-oo,+oo] *)
  
      (* bottom value: empty set *)
-     let bottom = IBottom
+     let bottom = PlusInfty,MinusInfty
  
      (* constant: {c} *)
-     let const n = Inter (n,n)
+     let const n = N n,N n
  
      (* interval: [a,b] *)
-     let rand a b = Inter(a,b)
+     let rand a b = N a,N b
  
-     let top = ITop 
+     let top = MinusInfty,PlusInfty
  
  
      (* unary operation *)
-     let unary a op = match a,op with
-      | Inter(x,y),AST_UNARY_MINUS -> Inter(Z.(~-) y,Z.(~-) x)
+     let unary a op = match op with
+      | AST_UNARY_MINUS -> num_un_minus (fst a),num_un_minus (snd a)
       | _ -> a
  
      (* binary operation *)
-     let binary a b op = match op,a,b with
-     | AST_DIVIDE,_,b | AST_MODULO,_,b when contains_zero b -> raise DivisionByZero
-     | _,IBottom,_ | _,_,IBottom -> IBottom
-     | _,ITop,_ | _,_,ITop -> ITop
-     | AST_PLUS,Inter(a,b),Inter(c,d) -> Inter(Z.(+) a c,Z.(+) b d)
-     | AST_MINUS,Inter(a,b),Inter(c,d) -> Inter(Z.(-) a d,Z.(-) b c)
-     | AST_MULTIPLY,Inter(a,b),Inter(c,d) | AST_DIVIDE,Inter(a,b),Inter(c,d) -> let l = [apply_int_bin_op op a c; apply_int_bin_op op a d; apply_int_bin_op op b c; apply_int_bin_op op c d] in
-      Inter(minList l, maxList l) 
-     | AST_MODULO,_,_ -> ITop
+     let binary a b op = let x,y = a in let z,t = b in match op with
+     | AST_DIVIDE | AST_MODULO when contains_zero b -> raise DivisionByZero
+     | AST_PLUS -> Z.(+) x z,Z.(+) b d
+     | AST_MINUS -> Z.(-) a d,Z.(-) b c
+     | AST_MULTIPLY | AST_DIVIDE -> let l = [apply_int_bin_op op a c; apply_int_bin_op op a d; apply_int_bin_op op b c; apply_int_bin_op op c d] in
+      minList l, maxList l 
+     | AST_MODULO -> top
  
  
  

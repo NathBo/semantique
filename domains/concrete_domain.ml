@@ -130,7 +130,11 @@ module CONCRETE_DOMAIN : Value_domain.VALUE_DOMAIN =
       IntSet.iter (aux fmt) a;
       Format.fprintf fmt "\n"
 
-    let to_string a = "IntSet"
+    let to_string env = 
+      let rep = ref "{" in
+      let aux a = rep:= !rep^" "^(Z.to_string a) in
+      IntSet.iter aux env;
+      !rep^"}"
 
 end
 

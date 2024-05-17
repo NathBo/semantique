@@ -21,6 +21,10 @@ type extent = position * position (* start/end *)
 let extent_unknown = (position_unknown, position_unknown)
 
 
+exception NotDefined of string
+exception DivisionByZero
+
+
 (* Many parts of the syntax are tagged with an extent indicating which
    part of the parser-file corresponds to the sub-tree.
    This is very useful for interesting error reporting!

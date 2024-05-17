@@ -169,7 +169,7 @@ let contains_zero s = match s with
      let rec compare x y op = match op,x,y with
       | _,SBot,_ | _,_,SBot -> SBot,SBot
       | AST_EQUAL,_,_ -> (meet x y, meet x y) 
-      | AST_NOT_EQUAL,_,_ -> (narrow x y, narrow y x)
+      | AST_NOT_EQUAL,_,_ -> if x = Zero && y = Zero then SBot,SBot else x,y
       | AST_GREATER,_,_ -> let a,b = compare y x AST_LESS in (b,a)
       | AST_GREATER_EQUAL,_,_ -> let a,b = compare y x AST_LESS_EQUAL in (b,a)
       | AST_LESS,_,STop | AST_LESS_EQUAL,_,STop -> (x,STop)

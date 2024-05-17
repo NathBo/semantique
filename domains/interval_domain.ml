@@ -183,10 +183,14 @@ let print_num fmt a = match a with
         a safe, but not precise implementation, would be:
         compare x y op = (x,y)
       *)
-      let compare x y op = match (x,y,op) with
-      | IBottom,_,_ | _,IBottom,_ -> (IBottom,IBottom)
-      | x,y,AST_EQUAL -> (meet x y,meet x y)
-      | _ -> (x,y)
+      let rec compare x y op = let a,b = x in let c,d = y in match op with
+      | AST_EQUAL -> (meet x y,meet x y)
+      | AST_NOT_EQUAL -> if a=b || c=d then (narrow x y, narrow y x) else x,y
+      | AST_LESS_EQUAL -> (a,numbMin b d),(numbMax a c,d)
+      | AST_LESS -> (a,numbMin b (num_minus d (N Z.one) true)),(numbMax (num_plus a (N Z.one) true) c,d)
+      | AST_GREATER_EQUAL -> let r1,r2 = compare y x AST_LESS_EQUAL in r2,r1
+      | AST_GREATER -> let r1,r2 = compare y x AST_LESS in r2,r1
+      
  
      (* backards unary operation *)
      (* [bwd_unary x op r] return x':
@@ -194,11 +198,12 @@ let print_num fmt a = match a with
         i.e., we fiter the abstract values x knowing the result r of applying
         the operation on x
       *)
-     let bwd_unary x op r = match x with
-      | Const n when subset (Const (apply_int_un_op op n)) r -> x
-      | Const _ -> Bottom
-      | _ -> meet x r
+     let bwd_unary x op r = match op with
+     | AST_UNARY_PLUS -> meet x r
+     | AST_UNARY_MINUS -> meet (num_un_minus(fst x),num_un_minus(fst x)) r
  
+
+     
      (* backward binary operation *)
      (* [bwd_binary x y op r] returns (x',y') where
        - x' abstracts the set of v  in x such that v op v' is in r for some v' in y

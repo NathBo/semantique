@@ -22,6 +22,11 @@ let contains_zero a = match a with
   | _ -> false
 
 
+let correct a = match a with
+| Inter(x,y) when x>y -> IBottom
+| _ -> a
+
+
 let rec minList l = match l with
   | [] -> failwith "non"
   | x::[] -> x
@@ -79,6 +84,46 @@ let rec maxList l = match l with
      | AST_MODULO,_,_ -> ITop
  
  
+ 
+ 
+ 
+ 
+     (* set-theoretic operations *)
+     let join a b = match a,b with
+      | ITop,_ | _,ITop -> ITop
+      | Inter(a,b),Inter(c,d) -> Inter(Z.min a c, Z.max b d)
+      | _ -> IBottom
+
+
+     let meet a b = match a,b with
+     | IBottom,_ | _,IBottom -> IBottom
+     | Inter(a,b),Inter(c,d) -> correct (Inter(Z.max a c,Z.min b d))
+     | x,ITop | ITop,x -> x
+ 
+     (* widening *)
+     let widen a b = ITop
+ 
+     (* narrowing *)
+     let narrow a b = match a,b with
+     | IBottom,_ | _,ITop -> IBottom
+     | ITop,_ -> ITop
+     | a,IBottom -> (print_endline "on a rien change dans :";print_endline (to_string a);a)
+     | Inter(a,b),Inter(c,d) -> let x = if a<c then a else d in
+      let y = if b>d then b else c in correct (Inter(x,y))
+
+
+     (* subset inclusion of concretizations *)
+     let subset a b = match a,b with
+     | IBottom,_ | _,ITop -> true
+     | ITop,_ -> false
+     | _,IBottom -> false
+     | Inter(a,b),Inter(c,d) -> a<=c && d<=b
+ 
+     (* check the emptiness of the concretization *)
+     let is_bottom a = a = IBottom
+
+
+
      (* comparison *)
      (* [compare x y op] returns (x',y') where
         - x' abstracts the set of v  in x such that v op v' is true for some v' in y
@@ -88,53 +133,10 @@ let rec maxList l = match l with
         a safe, but not precise implementation, would be:
         compare x y op = (x,y)
       *)
-     let compare x y op = match (x,y) with
-      | IBottom,_ | _,IBottom -> (IBottom,IBottom)
-      | Const(a),Const(b) when apply_compare_op op a b -> (x,y)
-      | Const(_),Const(_) -> (print_endline "ya plus personne";(Bottom,Bottom))
-      | _ -> (Top,Top)
- 
- 
- 
- 
-     (* set-theoretic operations *)
-     let join a b = match a,b with
-      | Top,_ | _,Top -> Top
-      | Const(n1),Const(n2) when n1 = n2 -> Const(n1)
-      | Const(_),Const(_) -> Top
-      | Const(n),Bottom | Bottom,Const(n) -> Const(n)
-      | _ -> Bottom
-
-
-     let meet a b = match a,b with
-     | Bottom,_ | _,Bottom -> Bottom
-     | Const(n1),Const(n2) when n1 = n2 -> Const(n1)
-     | Const(_),Const(_) -> Bottom
-     | Const(n),Top | Top,Const(n) -> Const(n)
-     | _ -> Top
- 
-     (* widening *)
-     let widen a b = Top
- 
-     (* narrowing *)
-     let narrow a b = match a,b with
-     | Bottom,_ | _,Top -> Bottom
-     | Top,_ -> Top
-     | a,Bottom -> (print_endline "on a rien change dans :";print_endline (to_string a);a)
-     | Const(n1),Const(n2) when n1 = n2 -> Bottom
-     | Const(_),Const(_) -> a
-
-
-     (* subset inclusion of concretizations *)
-     let subset a b = match a,b with
-     | Bottom,_ | _,Top -> true
-     | Top,_ -> false
-     | _,Bottom -> false
-     | Const(n1),Const(n2) when n1 = n2 -> true
-     | Const(_),Const(_) -> false
- 
-     (* check the emptiness of the concretization *)
-     let is_bottom a = a = Bottom
+      let compare x y op = match (x,y,op) with
+      | IBottom,_,_ | _,IBottom,_ -> (IBottom,IBottom)
+      | x,y,AST_EQUAL -> (meet x y,meet x y)
+      | _ -> (x,y)
  
      (* backards unary operation *)
      (* [bwd_unary x op r] return x':

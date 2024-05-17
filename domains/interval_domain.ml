@@ -133,9 +133,11 @@ let rec maxList l = match l with
      (* binary operation *)
      let binary a b op = let x,y = a in let z,t = b in match op with
      | AST_DIVIDE | AST_MODULO when contains_zero b -> raise DivisionByZero
-     | AST_PLUS -> Z.(+) x z,Z.(+) b d
-     | AST_MINUS -> Z.(-) a d,Z.(-) b c
-     | AST_MULTIPLY | AST_DIVIDE -> let l = [apply_int_bin_op op a c; apply_int_bin_op op a d; apply_int_bin_op op b c; apply_int_bin_op op c d] in
+     | AST_PLUS -> num_plus x z false,num_plus y t true
+     | AST_MINUS -> num_minus x t false,num_minus y z true
+     | AST_MULTIPLY -> let l = [num_times x z; num_times x t; num_times y z; num_times y t] in
+      minList l, maxList l 
+     | AST_DIVIDE -> let l = [num_divide x z; num_divide x t; num_divide y z; num_divide y t] in
       minList l, maxList l 
      | AST_MODULO -> top
  
@@ -145,38 +147,24 @@ let rec maxList l = match l with
  
  
      (* set-theoretic operations *)
-     let join a b = match a,b with
-      | ITop,_ | _,ITop -> ITop
-      | Inter(a,b),Inter(c,d) -> Inter(Z.min a c, Z.max b d)
-      | _ -> IBottom
+     let join x y = let a,b = x in let c,d = y in numbMin a c, numbMax b d
 
 
-     let meet a b = match a,b with
-     | IBottom,_ | _,IBottom -> IBottom
-     | Inter(a,b),Inter(c,d) -> correct (Inter(Z.max a c,Z.min b d))
-     | x,ITop | ITop,x -> x
+     let meet x y = let a,b = x in let c,d = y in (numbMax a c,numbMin b d)
  
      (* widening *)
-     let widen a b = ITop
+     let widen a b = top
  
      (* narrowing *)
-     let narrow a b = match a,b with
-     | IBottom,_ | _,ITop -> IBottom
-     | ITop,_ -> ITop
-     | a,IBottom -> (print_endline "on a rien change dans :";print_endline (to_string a);a)
-     | Inter(a,b),Inter(c,d) -> let x = if a<c then a else d in
-      let y = if b>d then b else c in correct (Inter(x,y))
+     let narrow x y = let a,b = x in let c,d = y in let x = if inf a c then a else d in
+      let y = if sup b d then b else c in x,y
 
 
      (* subset inclusion of concretizations *)
-     let subset a b = match a,b with
-     | IBottom,_ | _,ITop -> true
-     | ITop,_ -> false
-     | _,IBottom -> false
-     | Inter(a,b),Inter(c,d) -> a<=c && d<=b
+     let subset x y = let a,b = x in let c,d = y in a<=c && d<=b
  
      (* check the emptiness of the concretization *)
-     let is_bottom a = a = IBottom
+     let is_bottom a = sup (fst a) (snd a)
 
 
 

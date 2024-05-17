@@ -52,10 +52,12 @@ module CONCRETE_DOMAIN : Value_domain.VALUE_DOMAIN =
     let unary a op = IntSet.map (apply_int_un_op op) a
 
     (* binary operation *)
-    let binary a b op = 
-      let aux b_elt acc =
-        IntSet.union acc (IntSet.map (apply_int_bin_op op b_elt) a) in
-      (IntSet.fold aux b IntSet.empty)
+    let binary a b op = match op,a,b with
+      | AST_DIVIDE,_,b | AST_MODULO,_,b when IntSet.mem Z.zero b -> raise DivisionByZero
+      | _ ->
+        let aux b_elt acc =
+          IntSet.union acc (IntSet.map (apply_int_bin_op op b_elt) a) in
+        (IntSet.fold aux b IntSet.empty)
 
 
     (* comparison *)
@@ -109,7 +111,9 @@ module CONCRETE_DOMAIN : Value_domain.VALUE_DOMAIN =
       i.e., we filter the abstract values x and y knowing that, after
       applying the operation op, the result is in r
       *)
-    let bwd_binary x y op r =   (*tres potentiellement des erreurs ds cette fonction*)
+    let bwd_binary x y op r = match op,x,y with
+    | AST_DIVIDE,_,b | AST_MODULO,_,b when IntSet.mem Z.zero b -> raise DivisionByZero
+    | _ ->
       let works op elt z =
         IntSet.mem (apply_int_bin_op op elt z) r in
       let rec aux other_set elt acc =

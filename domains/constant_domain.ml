@@ -14,7 +14,12 @@
  
  
 type cst = Bottom | Top | Const of Z.t
- 
+
+
+let constains_zero a = match a with
+  | Top -> true
+  | Const n when n = Z.zero -> true
+  | _ -> false
  
  module CONSTANTDOMAIN : Value_domain.VALUE_DOMAIN =
    struct
@@ -50,7 +55,9 @@ type cst = Bottom | Top | Const of Z.t
       | a -> a
  
      (* binary operation *)
-     let binary a b op = match a,b with
+     let binary a b op = match op,a,b with
+     | AST_DIVIDE,_,b | AST_MODULO,_,b when constains_zero b -> raise DivisionByZero
+     | _ -> match a,b with
       | Const a, Const b -> Const (apply_int_bin_op op a b)
       | Bottom,_ | _,Bottom -> Bottom
       | _ -> Top
@@ -131,7 +138,9 @@ type cst = Bottom | Top | Const of Z.t
        i.e., we filter the abstract values x and y knowing that, after
        applying the operation op, the result is in r
        *)
-     let bwd_binary x y op r =
+     let bwd_binary x y op r = match op,x,y with
+     | AST_DIVIDE,_,b | AST_MODULO,_,b when constains_zero b -> raise DivisionByZero
+     | _ ->
       let aux n nr b = match op with
       | AST_PLUS -> Const (Z.(-) nr n)
       | AST_MINUS when b -> Const(Z.(-) n nr )

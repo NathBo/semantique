@@ -84,6 +84,8 @@ let contains_zero s = match s with
  
      (* binary operation *)
      let rec binary a b op = match op,a,b with
+     | AST_DIVIDE,_,b | AST_MODULO,_,b when contains_zero b -> raise DivisionByZero
+     | _ -> match op,a,b with
         | _,SBot,_ | _,_,SBot -> SBot
         | _,STop,_ | _,_,STop -> STop
         | AST_PLUS,Minus,StMinus | AST_PLUS,StMinus,Minus | AST_PLUS,StMinus,StMinus -> StMinus
@@ -211,7 +213,9 @@ let contains_zero s = match s with
        i.e., we filter the abstract values x and y knowing that, after
        applying the operation op, the result is in r
        *)
-     let bwd_binary x y op r =
+     let bwd_binary x y op r = match op,x,y with
+     | AST_DIVIDE,_,b | AST_MODULO,_,b when contains_zero b -> raise DivisionByZero
+     | _ ->
       let repx = ref SBot in
       let repy = ref SBot in
       let l = [|StMinus;Zero;StPlus|] in

@@ -76,7 +76,7 @@ let constains_zero a = match a with
       | Bottom,_ | _,Bottom -> (Bottom,Bottom)
       | Const(a),Const(b) when apply_compare_op op a b -> (x,y)
       | Const(_),Const(_) -> (print_endline "ya plus personne";(Bottom,Bottom))
-      | _ -> (Top,Top)
+      | _ -> (x,y)
  
  
  

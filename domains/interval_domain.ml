@@ -215,7 +215,7 @@ let print_num fmt a = match a with
      | AST_PLUS -> (numbMax a (num_minus e c true),numbMin b (num_minus f d true)),(numbMax c (num_minus e a true),numbMin d (num_minus f b true))
      | AST_MINUS -> (numbMax a (num_plus e c true),numbMin b (num_plus f d true)),(numbMax c (num_minus a e true),numbMin d (num_minus b f true))
      | AST_MODULO -> x,y                      (*les intervalles et modulo marchent vraiment pas ensemble*)
-     | AST_DIVIDE -> meet x (binary r y AST_MULTIPLY),meet y (binary r x AST_MULTIPLY)
+     | AST_DIVIDE -> meet x (binary r y AST_MULTIPLY),meet y (binary x r AST_DIVIDE)
      | AST_MULTIPLY -> meet x (binary r y AST_DIVIDE),meet y (binary r x AST_DIVIDE)
 
 

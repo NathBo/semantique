@@ -96,10 +96,16 @@ let rec maxList l = match l with
   | [] -> failwith "non"
   | x::[] -> x
   | x::q -> numbMax x (maxList q)
+
+
+let print_num fmt a = match a with
+| MinusInfty -> Format.fprintf fmt "-oo"
+| PlusInfty -> Format.fprintf fmt "+oo"
+| N n -> Z.pp_print fmt n
   
 
  
- module CONSTANTDOMAIN : Value_domain.VALUE_DOMAIN =
+ module INTERVALDOMAIN : Value_domain.VALUE_DOMAIN =
    struct
      
  
@@ -223,10 +229,8 @@ let rec maxList l = match l with
       | Top,Top,_ -> Top,Top
  
      (* print abstract element *)
-     let print fmt a = match a with
-     | Top -> Format.fprintf fmt "Top"
-     | Bottom -> Format.fprintf fmt "Bottom"
-     | Const n -> Format.fprintf fmt "%i" (Z.to_int n)
+     let print fmt a = Format.fprintf fmt "[%a,%a]" print_num (fst a) print_num (snd a)
+     
 
  
  end

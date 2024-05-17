@@ -10,6 +10,8 @@ open Domains
 
 module Iter_Constant = ITERATOR_FONCTOR(Constant_domain.CONSTANTDOMAIN)
 module Iter_Concrete = ITERATOR_FONCTOR(Concrete_domain.CONCRETE_DOMAIN)
+module Iter_Interval = ITERATOR_FONCTOR(Interval_domain.INTERVALDOMAIN)
+module Iter_Sign = ITERATOR_FONCTOR(Sign_domain.SIGN_DOMAIN)
 
 (* parse filename *)
 let doit filename =
@@ -22,7 +24,9 @@ let doit filename =
   match !Options.domain with
     | "constant" -> Iter_Constant.iterate filename cfg
     | "concrete" -> Iter_Concrete.iterate filename cfg
-    | _ ->          Iter_Constant.iterate filename cfg
+    | "interval" -> Iter_Interval.iterate filename cfg
+    | "sign" -> Iter_Sign.iterate filename cfg
+    | _ ->          Iter_Interval.iterate filename cfg
 
 
 (* parses arguments to get filename *)

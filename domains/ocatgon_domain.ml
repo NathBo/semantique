@@ -14,7 +14,9 @@ module OCTAGONDOMAIN : Value_domain.VALUE_DOMAIN = struct
   let top = { constraints = []; vars = 0 }
   let bottom = { constraints = [Plus (0, 0, Z.of_int (-1))]; vars = 0 }
 
-  let const c = { constraints = [Plus (0, 0, c)]; vars = 1 }
+  let const c = 
+    let two_c = Z.mul (Z.of_int 2) c in
+    { constraints = [Plus (0, 0, two_c); Minus (0, 0, two_c)]; vars = 1 }
 
   let rand a b = 
     if Z.leq a b then 

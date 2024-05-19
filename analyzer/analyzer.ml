@@ -12,6 +12,7 @@ module Iter_Constant = ITERATOR_FONCTOR(Constant_domain.CONSTANTDOMAIN)
 module Iter_Concrete = ITERATOR_FONCTOR(Concrete_domain.CONCRETE_DOMAIN)
 module Iter_Interval = ITERATOR_FONCTOR(Interval_domain.INTERVALDOMAIN)
 module Iter_Sign = ITERATOR_FONCTOR(Sign_domain.SIGN_DOMAIN)
+module Iter_Octagon = ITERATOR_FONCTOR(Ocatgon_domain.OCTAGONDOMAIN)
 
 (* parse filename *)
 let doit filename =
@@ -26,6 +27,7 @@ let doit filename =
     | "concrete" -> Iter_Concrete.iterate filename cfg
     | "interval" -> Iter_Interval.iterate filename cfg
     | "sign" -> Iter_Sign.iterate filename cfg
+    | "octagon" -> Iter_Octagon.iterate filename cfg
     | _ ->          Iter_Interval.iterate filename cfg
 
 

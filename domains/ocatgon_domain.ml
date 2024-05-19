@@ -1,7 +1,7 @@
 open Frontend
 open Abstract_syntax_tree
 
-module Octagon : Value_domain.VALUE_DOMAIN = struct
+module OCTAGONDOMAIN : Value_domain.VALUE_DOMAIN = struct
   type constraint_type =
     | Plus of int * int * Z.t  (* xi + xj ≤ c *)
     | Minus of int * int * Z.t (* xi - xj ≤ c *)

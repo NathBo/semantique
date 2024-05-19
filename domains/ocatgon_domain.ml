@@ -15,7 +15,7 @@ module Octagon : Value_domain.VALUE_DOMAIN = struct
   let bottom = { constraints = [Plus (0, 0, Z.of_int (-1))]; vars = 0 }
 
   let const c = { constraints = [Plus (0, 0, c)]; vars = 1 }
-  
+
   let rand a b = 
     if Z.leq a b then 
       { constraints = [Plus (0, 0, b); Plus (1, 1, Z.neg a)]; vars = 2 }
@@ -40,8 +40,10 @@ module Octagon : Value_domain.VALUE_DOMAIN = struct
     in
     match op with
     | AST_PLUS | AST_MINUS -> 
-        { constraints = List.map (fun (Plus (i, j, c1)) ->
-            Plus (i, j, apply_binary_op op c1 (Z.zero))) (x.constraints @ y.constraints);
+        { constraints = List.map (function
+            | Plus (i, j, c) -> Plus (i, j, apply_binary_op op c Z.zero)
+            | Minus (i, j, c) -> Minus (i, j, apply_binary_op op c Z.zero)
+          ) (x.constraints @ y.constraints);
           vars = max x.vars y.vars }
     | _ -> 
         (* For non-linear operations, we assume over-approximation *)
@@ -49,12 +51,12 @@ module Octagon : Value_domain.VALUE_DOMAIN = struct
 
   let compare x y op =
     let apply_compare_op op c = match op with
-      | AST_EQUAL -> c = Z.zero
-      | AST_NOT_EQUAL -> c <> Z.zero
-      | AST_LESS -> c < Z.zero
-      | AST_LESS_EQUAL -> c <= Z.zero
-      | AST_GREATER -> c > Z.zero
-      | AST_GREATER_EQUAL -> c >= Z.zero
+      | AST_EQUAL -> Z.equal c Z.zero
+      | AST_NOT_EQUAL -> not (Z.equal c Z.zero)
+      | AST_LESS -> Z.lt c Z.zero
+      | AST_LESS_EQUAL -> Z.leq c Z.zero
+      | AST_GREATER -> Z.gt c Z.zero
+      | AST_GREATER_EQUAL -> Z.geq c Z.zero
     in
     let filter_constraints constraints =
       List.filter (function
@@ -86,8 +88,13 @@ module Octagon : Value_domain.VALUE_DOMAIN = struct
     in
     let filter_constraints constraints =
       List.filter (function
-        | Plus (_, _, c) -> List.exists (fun (Plus (_, _, rc)) -> Z.leq c (apply_binary_op op rc Z.zero)) r.constraints
-        | Minus (_, _, c) -> List.exists (fun (Minus (_, _, rc)) -> Z.leq c (apply_binary_op op rc Z.zero)) r.constraints) constraints
+        | Plus (_, _, c) -> List.exists (function
+            | Plus (_, _, rc) -> Z.leq c (apply_binary_op op rc Z.zero)
+            | Minus (_, _, rc) -> Z.leq c (apply_binary_op op rc Z.zero)) r.constraints
+        | Minus (_, _, c) -> List.exists (function
+            | Plus (_, _, rc) -> Z.leq c (apply_binary_op op rc Z.zero)
+            | Minus (_, _, rc) -> Z.leq c (apply_binary_op op rc Z.zero)) r.constraints
+      ) constraints
     in
     ({ x with constraints = filter_constraints x.constraints },
      { y with constraints = filter_constraints y.constraints })

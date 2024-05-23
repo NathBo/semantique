@@ -81,7 +81,7 @@ module DOMAIN_FUNCTOR (VD:Value_domain.VALUE_DOMAIN) =
       Env.merge aux a b
 
     (* widening *)
-    let widen () = failwith "pas implémenté widen"
+    let widen a b = failwith "pas implémenté widen"
 
     (* narrowing *)
     let narrow a b =

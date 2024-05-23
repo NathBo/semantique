@@ -11,30 +11,55 @@ open! Domain
 
 
 
-let eval_bool_expr bexpr = match bexpr with
-  | CFG_bool_const b -> b
-  | _ -> failwith "TODO bool"
+module NodeMap = Map.Make(
+    struct
+        let compare = compare
+        type t = node
+    end )
+module NodeSet = Set.Make(
+    struct
+        let compare = compare
+        type t = node
+    end )
 
 
 let get_main_node cfg =
     List.fold_left (fun node f -> if f.func_name = "main" then f.func_entry else node) cfg.cfg_init_entry cfg.cfg_funcs
 
 
+let select_widening_node cfg =
+    let result = ref NodeSet.empty in
+    let in_progress = ref NodeSet.empty in
+    let finished = ref NodeSet.empty in
+    
+    let rec dfs pos =
+        if (not (NodeSet.mem pos !in_progress)) && (not (NodeSet.mem pos !finished))  then begin
+            (* this node is seen for the first time *)
+            in_progress := NodeSet.add pos !in_progress;
+            List.iter (fun arc ->
+                let dest = arc.arc_dst in
+                if (NodeSet.mem dest !finished) then begin
+                    (* ok : already finished *)
+                    ()
+                end else if (NodeSet.mem dest !in_progress) then begin
+                    (* there is a loop *)
+                    result := NodeSet.add dest !result
+                end else begin
+                    (* first time *)
+                    dfs dest
+                end
+            ) pos.node_out;
+            finished := NodeSet.add pos !finished;
+        end
+    in
+
+    List.iter dfs cfg.cfg_nodes;
+    !result
+
 module ITERATOR_FONCTOR(VD:Value_domain.VALUE_DOMAIN) = 
     struct
 
     module DOMAIN = Domain.DOMAIN_FUNCTOR(VD) 
-    module NodeMap = Map.Make(
-        struct
-            let compare = compare
-            type t = node
-        end )
-    module NodeSet = Set.Make(
-        struct
-            let compare = compare
-            type t = node
-        end )
-
 
     let iterate filename cfg =
         let _ = Random.self_init () in
@@ -44,6 +69,8 @@ module ITERATOR_FONCTOR(VD:Value_domain.VALUE_DOMAIN) =
 
         let worklist = ref [ cfg.cfg_init_entry ; get_main_node cfg ] in
         let already_seen = ref  NodeSet.empty in
+
+        let widening_set = select_widening_node cfg in
 
         while !worklist <> [] do
             let node = List.hd !worklist in
@@ -70,8 +97,13 @@ module ITERATOR_FONCTOR(VD:Value_domain.VALUE_DOMAIN) =
                 in DOMAIN.join value newVal
             ) DOMAIN.bottom node.node_in in
 
-            let no_change = ((DOMAIN.subset old_value update) && (DOMAIN.subset update old_value)) in
-            envs := NodeMap.add node update !envs ;
+            let is_widen = NodeSet.mem node widening_set in
+            let widen_value =
+                if is_widen then DOMAIN.widen old_value update
+                            else update in
+
+            let no_change = ((DOMAIN.subset old_value widen_value) && (DOMAIN.subset update widen_value)) in
+            envs := NodeMap.add node widen_value !envs ;
 
             (*DOMAIN.print Format.std_formatter old_value;
             DOMAIN.print Format.std_formatter update;

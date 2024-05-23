@@ -85,15 +85,15 @@ module DOMAIN_FUNCTOR (VD:Value_domain.VALUE_DOMAIN) =
 
     (* narrowing *)
     let narrow a b =
-      print_endline "On narrow :";
+      (*print_endline "On narrow :";
       print_endline (to_string a);
-      print_endline (to_string b);
+      print_endline (to_string b);*)
       let rec aux _ o_vd1 o_vd2 = match o_vd1,o_vd2 with
       | (_,None) | (None,_) -> None
       | (Some vd1,Some vd2) ->  Some (VD.narrow vd1 vd2) in
       let x = Env.merge aux a b in
-      print_endline "On obtient :";
-      prerr_endline (to_string x);
+      (*print_endline "On obtient :";
+      prerr_endline (to_string x);*)
       x
 
 
@@ -111,7 +111,7 @@ module DOMAIN_FUNCTOR (VD:Value_domain.VALUE_DOMAIN) =
     let rec guard a bool_expr = match bool_expr with
       | CFG_bool_const b -> if b then a else Env.map (fun x -> VD.bottom) a
       | CFG_bool_rand -> failwith "je sais pas, fais comme tu le sens sur les brand (et je parle pas du champion de League of Legends MDRRRRRR !!!!!!!)"
-      | CFG_bool_unary (AST_NOT,expr) -> let x = narrow a (guard a expr) in let () = print_endline "ya un not qui donne :" in let () = print_endline (to_string x) in let () = print_endline "sachant qu'avant on avait :" in let () = print_endline (to_string (guard a expr)) in x
+      | CFG_bool_unary (AST_NOT,expr) -> let x = narrow a (guard a expr) in (*let () = print_endline "ya un not qui donne :" in let () = print_endline (to_string x) in let () = print_endline "sachant qu'avant on avait :" in let () = print_endline (to_string (guard a expr)) in *) x
       | CFG_bool_binary (op,e1,e2) -> begin match op with
         | AST_AND -> meet (guard a e1) (guard a e2)
         | AST_OR -> join (guard a e1) (guard a e2)

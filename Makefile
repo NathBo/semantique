@@ -19,7 +19,7 @@ cleantest:
 	@rm -rf results
 
 test: cleantest all
-	@scripts/test.sh
+	@scripts/test.sh ./_build/install/default
 
 doc: all
 	@dune build @doc-private

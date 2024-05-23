@@ -50,12 +50,12 @@ module ITERATOR_FONCTOR(VD:Value_domain.VALUE_DOMAIN) =
             worklist := List.tl !worklist;
 
             
-            Format.fprintf Format.std_formatter "update node %d\n" node.node_id;
+            (*Format.fprintf Format.std_formatter "update node %d\n" node.node_id;*)
             let old_value = NodeMap.find node !envs in
 
             let update = List.fold_left (fun value arc -> 
                 let source = arc.arc_src in
-                Format.fprintf Format.std_formatter " -> from %d\n" source.node_id;
+                (*Format.fprintf Format.std_formatter " -> from %d\n" source.node_id;*)
                 let curEnv = NodeMap.find source !envs in
                 let newVal = match arc.arc_inst with
                     | CFG_skip _ -> curEnv 
@@ -73,9 +73,9 @@ module ITERATOR_FONCTOR(VD:Value_domain.VALUE_DOMAIN) =
             let no_change = ((DOMAIN.subset old_value update) && (DOMAIN.subset update old_value)) in
             envs := NodeMap.add node update !envs ;
 
-            DOMAIN.print Format.std_formatter old_value;
+            (*DOMAIN.print Format.std_formatter old_value;
             DOMAIN.print Format.std_formatter update;
-            Format.print_newline ();
+            Format.print_newline ();*)
 
             let first_time = not (NodeSet.mem node !already_seen) in
             if (not no_change) || first_time then begin

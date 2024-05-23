@@ -86,6 +86,20 @@ type bool_expr =
   | CFG_bool_rand
 
 
+  let rec negate e = match e with
+  | CFG_bool_unary (AST_NOT,e1) -> e1
+  | CFG_bool_binary (AST_AND,e1,e2) -> CFG_bool_binary(AST_OR,negate e1,negate e2)
+  | CFG_bool_binary (AST_OR,e1,e2) -> CFG_bool_binary(AST_AND,negate e1,negate e2)
+  | CFG_compare(AST_EQUAL,i1,i2) -> CFG_compare(AST_NOT_EQUAL,i1,i2)
+  | CFG_compare(AST_NOT_EQUAL,i1,i2) -> CFG_compare(AST_EQUAL,i1,i2)
+  | CFG_compare(AST_GREATER,i1,i2) -> CFG_compare(AST_LESS_EQUAL,i1,i2)
+  | CFG_compare(AST_GREATER_EQUAL,i1,i2) -> CFG_compare(AST_LESS,i1,i2)
+  | CFG_compare(AST_LESS,i1,i2) -> CFG_compare(AST_GREATER_EQUAL,i1,i2)
+  | CFG_compare(AST_LESS_EQUAL,i1,i2) -> CFG_compare(AST_GREATER,i1,i2)
+  | CFG_bool_const(b) -> CFG_bool_const(not b)
+  | CFG_bool_rand -> CFG_bool_rand
+
+
 
 (* Instructions *)
 (* ************ *)

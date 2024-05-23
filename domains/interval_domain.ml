@@ -179,7 +179,7 @@ let print_num fmt a = match a with
 
 
      (* subset inclusion of concretizations *)
-     let subset x y = let a,b = x in let c,d = y in a<=c && d<=b
+     let subset x y = print_endline (to_string y);let a,b = x in let c,d = y in c<=a && b<=d
  
      (* check the emptiness of the concretization *)
      let is_bottom a = sup (fst a) (snd a)
@@ -212,7 +212,7 @@ let print_num fmt a = match a with
       *)
      let bwd_unary x op r = match op with
      | AST_UNARY_PLUS -> meet x r
-     | AST_UNARY_MINUS -> meet (num_un_minus(fst x),num_un_minus(fst x)) r
+     | AST_UNARY_MINUS -> meet (num_un_minus(snd r),num_un_minus(fst r)) x
  
 
 

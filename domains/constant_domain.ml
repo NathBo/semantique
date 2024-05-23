@@ -72,10 +72,11 @@ let constains_zero a = match a with
         a safe, but not precise implementation, would be:
         compare x y op = (x,y)
       *)
-     let compare x y op = match (x,y) with
-      | Bottom,_ | _,Bottom -> (Bottom,Bottom)
-      | Const(a),Const(b) when apply_compare_op op a b -> (x,y)
-      | Const(_),Const(_) -> (print_endline "ya plus personne";(Bottom,Bottom))
+     let compare x y op = match (x,y,op) with
+      | Bottom,_,_ | _,Bottom,_ -> (Bottom,Bottom)
+      | Const(a),Const(b),_ when apply_compare_op op a b -> (x,y)
+      | Const(_),Const(_),_ -> (print_endline "ya plus personne";(Bottom,Bottom))
+      | Const(a),Top,AST_EQUAL | Top,Const(a),AST_EQUAL -> (Const(a),Const(a))
       | _ -> (x,y)
  
  

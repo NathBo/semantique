@@ -22,7 +22,7 @@ let doit filename =
   Cfg_printer.output_dot !Options.cfg_out cfg;
 
   match !Options.domain with
-    | "constant" -> Iter_Constant.iterate filename cfg
+    | "constant" | "constants" -> Iter_Constant.iterate filename cfg
     | "concrete" -> Iter_Concrete.iterate filename cfg
     | "interval" -> Iter_Interval.iterate filename cfg
     | "sign" -> Iter_Sign.iterate filename cfg

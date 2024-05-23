@@ -146,6 +146,18 @@ let print_num fmt a = match a with
      | AST_DIVIDE -> let l = [num_divide x z; num_divide x t; num_divide y z; num_divide y t] in
       minList l, maxList l 
      | AST_MODULO -> top
+
+
+    let rec lenientbinary a b op = let x,y = a in let z,t = b in match op with
+    | AST_DIVIDE | AST_MODULO when z=(N Z.zero) -> lenientbinary a (N Z.one,t) op
+    | AST_DIVIDE | AST_MODULO when t=(N Z.zero) -> lenientbinary a (z,N (Z.of_int (-1))) op
+    | AST_PLUS -> num_plus x z false,num_plus y t true
+    | AST_MINUS -> num_minus x t false,num_minus y z true
+    | AST_MULTIPLY -> let l = [num_times x z; num_times x t; num_times y z; num_times y t] in
+     minList l, maxList l 
+    | AST_DIVIDE -> let l = [num_divide x z; num_divide x t; num_divide y z; num_divide y t] in
+     minList l, maxList l 
+    | AST_MODULO -> top
  
  
  
@@ -215,8 +227,8 @@ let print_num fmt a = match a with
      | AST_PLUS -> (numbMax a (num_minus e c true),numbMin b (num_minus f d true)),(numbMax c (num_minus e a true),numbMin d (num_minus f b true))
      | AST_MINUS -> (numbMax a (num_plus e c true),numbMin b (num_plus f d true)),(numbMax c (num_minus a e true),numbMin d (num_minus b f true))
      | AST_MODULO -> x,y                      (*les intervalles et modulo marchent vraiment pas ensemble*)
-     | AST_DIVIDE -> meet x (binary r y AST_MULTIPLY),meet y (binary x r AST_DIVIDE)
-     | AST_MULTIPLY -> meet x (binary r y AST_DIVIDE),meet y (binary r x AST_DIVIDE)
+     | AST_DIVIDE -> meet x (binary r y AST_MULTIPLY),meet y (lenientbinary x r AST_DIVIDE)
+     | AST_MULTIPLY -> meet x (lenientbinary r y AST_DIVIDE),meet y (lenientbinary r x AST_DIVIDE)
 
 
 

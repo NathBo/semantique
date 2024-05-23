@@ -101,7 +101,7 @@ module DOMAIN_FUNCTOR (VD:Value_domain.VALUE_DOMAIN) =
     let rec filter env int_expr vd = match int_expr with
     | CFG_int_const z -> if VD.subset (VD.const z) vd then env else Env.map (fun x -> VD.bottom) env
     | CFG_int_rand (a,b) -> if VD.subset (VD.rand a b) vd then env else Env.map (fun x -> VD.bottom) env
-    | CFG_int_var v -> Env.add v (VD.meet (Env.find v env) vd) env
+    | CFG_int_var v -> let x = VD.meet (Env.find v env) vd in if VD.is_bottom x then Env.map (fun x -> VD.bottom) env else Env.add v x env
     | CFG_int_unary (op,e) -> filter env e (VD.bwd_unary (evaluate env e) op vd)   (*jpense c bon mais jsuis pas sur*)
     | CFG_int_binary (op,e1,e2) -> let vd1,vd2 = (VD.bwd_binary (evaluate env e1) (evaluate env e2) op vd) in
       filter (filter env e1 vd1) e2 vd2

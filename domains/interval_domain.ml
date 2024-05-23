@@ -174,7 +174,7 @@ let print_num fmt a = match a with
      let widen a b = top
  
      (* narrowing *)
-     let narrow x y = let a,b = x in let c,d = y in let x = if inf a c then a else d in
+     let narrow x y = let a,b = x in let c,d = y in let x = if inf a c then a else if a=d then PlusInfty else  d in
       let y = if sup b d then b else c in x,y
 
 
@@ -224,7 +224,7 @@ let print_num fmt a = match a with
        applying the operation op, the result is in r
        *)
      let bwd_binary x y op r = let a,b = x in let c,d = y in let e,f = r in if op=AST_DIVIDE && contains_zero y then raise DivisionByZero else match op with
-     | AST_PLUS -> (numbMax a (num_minus e c true),numbMin b (num_minus f d true)),(numbMax c (num_minus e a true),numbMin d (num_minus f b true))
+     | AST_PLUS -> meet x (binary r y AST_MINUS),meet y (binary r x AST_MINUS)
      | AST_MINUS -> (numbMax a (num_plus e c true),numbMin b (num_plus f d true)),(numbMax c (num_minus a e true),numbMin d (num_minus b f true))
      | AST_MODULO -> x,y                      (*les intervalles et modulo marchent vraiment pas ensemble*)
      | AST_DIVIDE -> meet x (binary r y AST_MULTIPLY),meet y (lenientbinary x r AST_DIVIDE)

@@ -98,6 +98,7 @@ let contains_zero s = match s with
      | _ -> match op,a,b with
         | _,SBot,_ | _,_,SBot -> SBot
         | _,STop,_ | _,_,STop -> STop
+        | AST_PLUS,Zero,x | AST_PLUS,x,Zero -> x
         | AST_PLUS,Minus,StMinus | AST_PLUS,StMinus,Minus | AST_PLUS,StMinus,StMinus -> StMinus
         | AST_PLUS,Plus,StPlus | AST_PLUS,StPlus,Plus | AST_PLUS,StPlus,StPlus -> StPlus
         | AST_PLUS,Plus,Plus -> Plus

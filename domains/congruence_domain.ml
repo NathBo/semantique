@@ -94,14 +94,7 @@ let divides a b = match a,b with
         a safe, but not precise implementation, would be:
         compare x y op = (x,y)
       *)
-     let rec compare x y op = match (x,y,op) with
-      | CBot,_,_ | _,CBot,_ -> (CBot,CBot)
-      | C(a,b),C(c,d),AST_EQUAL when a=c -> if b=d then (x,y) else (CBot,CBot)
-      | C(a,b),C(c,d),AST_NOT_EQUAL when a=c -> if b<>d then (x,y) else (CBot,CBot)
-      | C(a,b),C(c,d),AST_EQUAL when divides c a -> if divides c (Z.(-) b d) then (x,y) else (CBot,CBot)
-      | C(a,b),C(c,d),AST_NOT_EQUAL when divides c a -> if divides c (Z.(-) b d) then (x,y) else (CBot,CBot)
-      | C(a,b),C(c,d),_ when divides a c -> let rep1,rep2 = compare y x op in rep2,rep1
-      | _ -> (x,y)
+     
  
  
  
@@ -119,6 +112,15 @@ let divides a b = match a,b with
      | C(a,b),C(c,d) when divides c a -> if divides c (Z.(-) b d) then C(a,b) else bottom
      | C(a,b),C(c,d) when divides a c -> if divides a (Z.(-) d b) then C(c,d) else bottom
      | _ -> bottom
+
+
+     let rec compare x y op = match (x,y,op) with
+      | CBot,_,_ | _,CBot,_ -> (CBot,CBot)
+      | C(a,b),C(c,d),AST_EQUAL -> (meet x y), (meet x y)
+      | C(a,b),C(c,d),AST_NOT_EQUAL when a=c -> if b<>d then (x,y) else (CBot,CBot)
+      | C(a,b),C(c,d),AST_NOT_EQUAL when divides c a -> if divides c (Z.(-) b d) then (x,y) else (CBot,CBot)
+      | C(a,b),C(c,d),_ when divides a c -> let rep1,rep2 = compare y x op in rep2,rep1
+      | _ -> (x,y)
  
      (* widening *)
      let widen a b = top

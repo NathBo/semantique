@@ -78,6 +78,9 @@ let divides a b = match a,b with
       | AST_MODULO,C(a,b),C(c,d) when c=Z.zero && divides d a -> C(Z.zero,Z.(mod) b d)
       | AST_MODULO,_,_ -> top
 
+
+    
+
       
  
  
@@ -156,28 +159,19 @@ let divides a b = match a,b with
        i.e., we filter the abstract values x and y knowing that, after
        applying the operation op, the result is in r
        *)
-     let bwd_binary x y op r = match op,x,y with
-     | AST_DIVIDE,_,b | AST_MODULO,_,b when constains_zero b -> raise DivisionByZero
-     | _ ->
-      let aux n nr b = match op with
-      | AST_PLUS -> Const (Z.(-) nr n)
-      | AST_MINUS when b -> Const(Z.(-) n nr )
-      | AST_MINUS -> Const(Z.(+) n nr )
-      | AST_MULTIPLY when n<>Z.zero && Z.(mod) nr n = Z.zero -> Const(Z.(/) nr n)
-      | AST_MULTIPLY when n=Z.zero && nr=Z.zero -> Top
-      | AST_MULTIPLY -> Bottom
-      | AST_MODULO when not b && Z.abs nr>= Z.abs n -> Bottom     (*a%b<b*)
-      | AST_MODULO when b && Z.abs nr > Z.abs n -> Bottom          (*a/b<=a*)
-      | _ -> Top in
-      match x,y,r with
-      | Const(n1),Const(n2),_ when subset (Const (apply_int_bin_op op n1 n2)) r -> (x,y)
-      | Const(_),Const(_),_ -> (Bottom,Bottom)
-      | Const(n),Top,Const(nr) -> let a = aux n nr true in if a=Bottom then (Bottom,Bottom) else Const(n),a
-      | Top,Const(n),Const(nr) -> let a = aux n nr false in if a=Bottom then (Bottom,Bottom) else a,Const(n)
-      | Const(n),Top,Top -> Const(n),Top
-      | Top,Const(n),Top -> Top,Const(n)
-      | _,_,Bottom | _,Bottom,_ | Bottom,_,_ -> Bottom,Bottom
-      | Top,Top,_ -> Top,Top
+     let bwd_binary x y op r = match op,x,y,r with
+     | _,CBot,_,_ | _,_,CBot,_ | _,_,_,CBot -> CBot,CBot
+     | AST_DIVIDE,_,b,_ | AST_MODULO,_,b,_ when constains_zero b -> raise DivisionByZero
+     | AST_PLUS,_,_,_ -> meet x (binary r y AST_MINUS),meet y (binary r x AST_MINUS)
+     | AST_MINUS,_,_,_ -> meet x (binary r y AST_PLUS),meet y (binary r x AST_PLUS)
+     | AST_MULTIPLY,_,_,_-> let rep1 = if constains_zero y && constains_zero r then x else meet x (binary r y AST_DIVIDE) in
+      let rep2 = if constains_zero x && constains_zero r then y else meet y (binary r x AST_DIVIDE) in
+      rep1,rep2
+     | AST_DIVIDE,_,_,_ -> x,y
+     | AST_MODULO,C(a,b),C(c,d),C(e,f) when c=Z.zero && divides d a && e = Z.zero -> if f = Z.(mod) b d then x,y else (CBot,CBot)
+     | AST_MODULO,_,_,_ -> x,y
+
+     
  
      (* print abstract element *)
      let print fmt a = match a with

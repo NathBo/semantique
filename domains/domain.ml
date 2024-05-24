@@ -20,6 +20,8 @@ module Env = Map.Make(
     type t = var
   end )
 
+
+
 (*
   Signature of abstract domains representing sets of envrionments
   (for instance: a map from variable to their bounds).
@@ -42,6 +44,11 @@ module DOMAIN_FUNCTOR (VD:Value_domain.VALUE_DOMAIN) =
         rep := !rep ^  key.var_name ^" -> " ^ VD.to_string value ^ ";"
       ) map;
       !rep^"}"
+
+    let envfind v env = match Env.find_opt v env with
+      | Some x -> x
+      | None -> VD.bottom
+    
 
     (* initial environment, with all variables initialized to 0 *)
     let init (var_list:var list) = List.fold_left (fun env key -> Env.add key (VD.const Z.zero) env) Env.empty var_list
@@ -124,7 +131,7 @@ module DOMAIN_FUNCTOR (VD:Value_domain.VALUE_DOMAIN) =
     let rec filter env int_expr vd = match int_expr with
     | CFG_int_const z -> if VD.subset (VD.const z) vd then env else Env.map (fun x -> VD.bottom) env
     | CFG_int_rand (a,b) -> if VD.subset (VD.rand a b) vd then env else Env.map (fun x -> VD.bottom) env
-    | CFG_int_var v -> let x = VD.meet (Env.find v env) vd in if VD.is_bottom x then Env.map (fun x -> VD.bottom) env else Env.add v x env
+    | CFG_int_var v -> let x = VD.meet (envfind v env) vd in if VD.is_bottom x then Env.map (fun x -> VD.bottom) env else Env.add v x env
     | CFG_int_unary (op,e) -> filter env e (VD.bwd_unary (evaluate env e) op vd)   (*jpense c bon mais jsuis pas sur*)
     | CFG_int_binary (op,e1,e2) -> let vd1,vd2 = (VD.bwd_binary (evaluate env e1) (evaluate env e2) op vd) in
       filter (filter env e1 vd1) e2 vd2
@@ -140,18 +147,18 @@ module DOMAIN_FUNCTOR (VD:Value_domain.VALUE_DOMAIN) =
         | AST_OR -> join (guard a e1) (guard a e2)
         end
       | CFG_compare (op,e1,e2) -> begin let vd1,vd2 = (VD.compare (evaluate a e1) (evaluate a e2) op) in
-        (*print_endline "On a l'environnement :";
+        print_endline "On a l'environnement :";
         print_endline (to_string a);
         print_endline "On a les valeurs de :";
         print_endline (VD.to_string vd1);
-        print_endline (VD.to_string vd2);*)
+        print_endline (VD.to_string vd2);
         let x = filter (filter a e1 vd1) e2 vd2 in print_endline "L'environnement final est :"; print_endline (to_string x); x end
 
 
     (* whether an abstract element is included in another one *)
     let subset a b =
       let rec aux v vd =
-        Env.mem v b && VD.subset vd (Env.find v b) in
+        Env.mem v b && VD.subset vd (envfind v b) in
       Env.for_all aux a
 
     (* whether the abstract element represents the empty set *)

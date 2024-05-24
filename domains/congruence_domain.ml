@@ -74,6 +74,7 @@ let divides a b = match a,b with
       | AST_MINUS,C(a,b),C(c,d) when a=c -> C(a,Z.(-) b d)
       | AST_MINUS,_,_ -> top
       | AST_MULTIPLY,C(a,b),C(c,d) when a=c-> C(a, Z.( * ) b d)
+      | AST_MULTIPLY,C(a,b),C(c,d) when (c=Z.zero && d=Z.zero) || (a=Z.zero && b=Z.zero) -> C(Z.zero,Z.zero)
       | AST_MULTIPLY,_,_ -> top
       | AST_DIVIDE,_,_ -> top
       | AST_MODULO,C(a,b),C(c,d) when c=Z.zero && divides d a -> C(Z.zero,Z.(mod) b d)

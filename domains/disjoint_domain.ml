@@ -44,7 +44,7 @@ module DOMAIN_FUNCTOR (VD:Value_domain.VALUE_DOMAIN) : Domain_sig.DOMAIN =
 
     let to_string map =
       let rep = ref "{" in
-      Env.iter (fun key value ->
+      E.iter (fun key value ->
         rep := !rep ^  key.var_name ^" -> [";
         List.iter (fun x -> rep:= !rep^(VD.to_string x)^",") value;
         rep := !rep^"];";
@@ -52,16 +52,16 @@ module DOMAIN_FUNCTOR (VD:Value_domain.VALUE_DOMAIN) : Domain_sig.DOMAIN =
       rep:= !rep^"]";
       !rep^"}"
 
-    let envfind v env = match Env.find_opt v env with
+    let envfind v env = match E.find_opt v env with
       | Some x -> x
       | None -> VD.bottom
     
 
     (* initial environment, with all variables initialized to 0 *)
-    let init (var_list:var list) = List.fold_left (fun env key -> let x = E.add key [VD.const Z.zero] env in  x) D.Env.empty var_list
+    let init (var_list:var list) = List.fold_left (fun env key -> let x = E.add key [VD.const Z.zero] env in  x) E.empty var_list
 
     (* empty set of environments *)
-    let bottom = D.Env.empty
+    let bottom = E.empty
 
 
 

@@ -127,7 +127,7 @@ let divides a b = match a,b with
       | C(a,b),C(c,d),AST_EQUAL -> (meet x y), (meet x y)
       | C(a,b),C(c,d),AST_NOT_EQUAL when a=c -> if b<>d then (x,y) else (CBot,CBot)
       | C(a,b),C(c,d),AST_NOT_EQUAL when divides c a -> if divides c (Z.(-) b d) then (x,y) else (CBot,CBot)
-      | C(a,b),C(c,d),_ when divides a c -> let rep1,rep2 = compare y x op in rep2,rep1
+      | C(a,b),C(c,d),AST_NOT_EQUAL when divides a c -> let rep1,rep2 = compare y x op in rep2,rep1
       | _ -> (x,y)
  
      (* widening *)

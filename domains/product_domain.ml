@@ -85,7 +85,7 @@ module CD = CONGRUENCEDOMAIN
  
      (* check the emptiness of the concretization *)
      let is_bottom (i1,c1) =
-      ID.is_bottom i1 && CD.is_bottom c1
+      ID.is_bottom i1 || CD.is_bottom c1
 
 
 

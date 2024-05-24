@@ -114,9 +114,11 @@ let divides a b = match a,b with
 
      let meet a b = match a,b with
      | CBot,_ | _,CBot -> CBot
+     | C(a,b),C(c,d) when c=Z.one -> C(a,b)
+     | C(a,b),C(c,d) when a=Z.one -> C(c,d)
      | C(a,b),C(c,d) when divides c a -> if divides c (Z.(-) b d) then C(a,b) else bottom
      | C(a,b),C(c,d) when divides a c -> if divides a (Z.(-) d b) then C(c,d) else bottom
-     | _ -> bottom
+     | _ -> top (*possibilite de faire mieux avec les restes chinois*)
 
 
      let rec compare x y op = match (x,y,op) with
@@ -141,7 +143,7 @@ let divides a b = match a,b with
 
 
      (* subset inclusion of concretizations *)
-     let subset a b = match a,b with
+     let subset x y = match x,y with
      | CBot,_ -> true
      | _,CBot -> false
      | C(a,b),C(c,d) when divides c a -> divides c (Z.(-) b d)
@@ -158,7 +160,7 @@ let divides a b = match a,b with
       *)
      let bwd_unary x op r = match op with
      | AST_UNARY_PLUS -> meet x r
-     | AST_UNARY_MINUS -> meet (unary x AST_UNARY_MINUS) r
+     | AST_UNARY_MINUS -> meet (unary r AST_UNARY_MINUS) x
  
      (* backward binary operation *)
      (* [bwd_binary x y op r] returns (x',y') where

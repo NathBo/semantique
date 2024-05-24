@@ -27,7 +27,7 @@ end
  *)
 
 
-module DOMAIN_FUNCTOR (VD:Value_domain.VALUE_DOMAIN) : Domain_sig.DOMAIN =
+module DOMAIN_DISJOINT (VD:Value_domain.VALUE_DOMAIN) : Domain_sig.DOMAIN =
   struct
 
     (* type of abstract elements *)

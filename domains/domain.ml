@@ -28,7 +28,7 @@ module Env = Map.Make(
  *)
 
 
-module DOMAIN_FUNCTOR (VD:Value_domain.VALUE_DOMAIN) =
+module DOMAIN_FUNCTOR (VD:Value_domain.VALUE_DOMAIN) : Domain_sig.DOMAIN =
   struct
 
     (* type of abstract elements *)

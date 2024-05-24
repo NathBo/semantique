@@ -117,10 +117,9 @@ let replace_fct cfg_old =
         
 
 
-module ITERATOR_FONCTOR(VD:Value_domain.VALUE_DOMAIN) = 
+module ITERATOR_FONCTOR(VD:Value_domain.VALUE_DOMAIN) (DOMAIN:Domain_sig.DOMAIN) = 
     struct
 
-    module DOMAIN = Domain.DOMAIN_FUNCTOR(VD) 
 
     let iterate filename cfg_with_fct =
         let cfg = replace_fct cfg_with_fct in

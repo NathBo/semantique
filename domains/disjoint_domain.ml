@@ -54,7 +54,7 @@ module DOMAIN_DISJOINT (VD:Value_domain.VALUE_DOMAIN) : Domain_sig.DOMAIN =
 
     let envfind v env = match E.find_opt v env with
       | Some x -> x
-      | None -> VD.bottom
+      | None -> []
     
 
     (* initial environment, with all variables initialized to 0 *)
@@ -64,10 +64,29 @@ module DOMAIN_DISJOINT (VD:Value_domain.VALUE_DOMAIN) : Domain_sig.DOMAIN =
     let bottom = E.empty
 
 
+    let addposs nouv curr = nouv::curr
+
+    let rec addposslist nouvl curr = match nouvl with
+    | [] -> curr
+    | x::q -> addposslist q (x::curr)
+
+
+    let rec evaluate env int_expr = match int_expr with
+    | CFG_int_const n -> [VD.const n]
+    | CFG_int_var v -> E.find v env
+    | CFG_int_unary (op,i) -> let l = evaluate env i in List.map (fun x -> VD.unary x op) l
+    | CFG_int_binary (op,i1,i2) -> 
+      let a = evaluate env i1 in
+      let b = evaluate env i2 in
+      let aux acc b_elt =
+      addposslist (List.map (fun x -> VD.binary b_elt x op) a) acc in
+      (List.fold_left aux b [])
+    | CFG_int_rand(n1,n2) -> [VD.rand n1 n2]
+
 
 
     (* assign an integer expression to a variable *)
-    let assign (env:VD.t list E.t) var int_expr = failwith "pas implémenté1"
+    let assign (env:VD.t list E.t) var int_expr = E.add var (evaluate env int_expr) env
 
 
     (* abstract join *)

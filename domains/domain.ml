@@ -140,11 +140,11 @@ module DOMAIN_FUNCTOR (VD:Value_domain.VALUE_DOMAIN) =
         | AST_OR -> join (guard a e1) (guard a e2)
         end
       | CFG_compare (op,e1,e2) -> begin let vd1,vd2 = (VD.compare (evaluate a e1) (evaluate a e2) op) in
-        (*print_endline "On a l'environnement :";
+        print_endline "On a l'environnement :";
         print_endline (to_string a);
         print_endline "On a les valeurs de :";
         print_endline (VD.to_string vd1);
-        print_endline (VD.to_string vd2);*)
+        print_endline (VD.to_string vd2);
         let x = filter (filter a e1 vd1) e2 vd2 in print_endline "L'environnement final est :"; print_endline (to_string x); x end
 
 

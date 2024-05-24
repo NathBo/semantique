@@ -23,7 +23,8 @@ let constains_zero a = match a with
 
 let divides a b = match a,b with
 | _,b when b=Z.zero -> true
-| a,b -> Z.(mod) a b = Z.zero
+| a,_ when a=Z.zero -> false
+| a,b -> Z.(mod) b a = Z.zero
 
 
 
@@ -49,7 +50,7 @@ let divides a b = match a,b with
      (* constant: {c} *)
      let const n = C (Z.zero,n)
 
-     let top = C (Z.zero,Z.one)
+     let top = C (Z.one,Z.zero)
  
      (* interval: [a,b] *)
      let rand a b = if a=b then const a else top

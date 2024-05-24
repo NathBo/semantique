@@ -85,7 +85,7 @@ module DOMAIN_FUNCTOR (VD:Value_domain.VALUE_DOMAIN) =
     let print fmt map =
       Format.fprintf fmt "{@[";
       Env.iter (fun key value ->
-        Format.fprintf fmt "%s -> %a;@ " key.var_name VD.print value
+        Format.fprintf fmt "%s(%d) -> %a;@ " key.var_name key.var_id VD.print value
       ) map;
       Format.fprintf fmt "@]}"
 

@@ -188,16 +188,14 @@ let contains_zero s = match s with
       | AST_LESS,_,STop | AST_LESS_EQUAL,_,STop -> (x,STop)
       | AST_LESS,STop,_ | AST_LESS_EQUAL,STop,_ -> (y,y)
       | (AST_LESS_EQUAL,x,y) when x = y -> (x,y)
-      | AST_LESS,Minus,Zero | AST_LESS,StMinus,Zero | AST_LESS_EQUAL,StMinus,Zero -> StMinus,Zero
-      | AST_LESS_EQUAL,Minus,Zero -> Minus,Zero
-      | AST_LESS_EQUAL,Zero,y when not (is_minus y) -> Zero,y
-      | AST_LESS,Zero,y when is_plus y -> Zero,StPlus
-      | _,Plus,StPlus | _,StPlus,Plus -> StPlus,StPlus
-      | AST_LESS,Plus,Minus -> Zero,Zero
-      | AST_LESS,Minus,_ -> Minus,y
-      | AST_LESS,StMinus,_ -> StMinus,y
-      | AST_LESS,Plus,_ | AST_LESS,StPlus,_ | AST_LESS,Zero,_ -> x,meet y StPlus
-      | _ -> x,y
+      | AST_LESS_EQUAL,Plus,Minus -> Zero,Zero
+      | _,StMinus,_ -> StMinus,y
+      | _,Minus,_ -> Minus,y
+      | AST_LESS_EQUAL,Zero,_ -> let rep = meet Plus y in if rep = SBot then (SBot,SBot) else Zero,rep
+      | AST_LESS,Zero,_ -> let rep = meet StPlus y in if rep = SBot then (SBot,SBot) else Zero,rep
+      | AST_LESS_EQUAL,Plus,_ -> let rep = meet Plus y in if rep = SBot then (SBot,SBot) else Plus,rep
+      | AST_LESS,Plus,_ -> let rep = meet StPlus y in if rep = SBot then (SBot,SBot) else Plus,rep
+      | _,StPlus,_ -> let rep = meet StPlus y in if rep = SBot then (SBot,SBot) else StPlus,rep
 
 
  

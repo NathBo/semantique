@@ -53,18 +53,27 @@ let constains_zero a = match a with
  
  
      (* unary operation *)
-     let unary a op = match a with
-      | Const n -> Const (apply_int_un_op op n)
-      | a -> a
+     let unary a op = match op,a with
+      | AST_UNARY_PLUS,_ -> a
+      | AST_UNARY_MINUS,CBot -> CBot
+      | AST_UNARY_MINUS,C(a,b) -> C(a,Z.(-) a b)
  
      (* binary operation *)
      let binary a b op = match op,a,b with
-     | AST_DIVIDE,_,b | AST_MODULO,_,b when constains_zero b -> raise DivisionByZero
-     | AST_MULTIPLY,Const(n),Top | AST_MULTIPLY,Top,Const(n) when n=Z.zero -> Const(Z.zero)
-     | _ -> match a,b with
-      | Const a, Const b -> Const (apply_int_bin_op op a b)
-      | Bottom,_ | _,Bottom -> Bottom
-      | _ -> Top
+      | AST_MODULO,_,_ | AST_DIVIDE,_,_ when constains_zero b -> raise DivisionByZero
+      | _,_,CBot -> CBot
+      | _,CBot,_ -> CBot
+      | AST_PLUS,C(a,b),C(c,d) when a=c -> C(a,Z.(+) b d)
+      | AST_PLUS,_,_ -> top
+      | AST_MINUS,C(a,b),C(c,d) when a=c -> C(a,Z.(-) b d)
+      | AST_MINUS,_,_ -> top
+      | AST_MULTIPLY,C(a,b),C(c,d) when a=c-> C(a, Z.( * ) b d)
+      | AST_MULTIPLY,_,_ -> top
+      | AST_DIVIDE,_,_ -> top
+      | AST_MODULO,C(a,b),C(c,d) when c=Z.zero && Z.(mod) a d = Z.zero -> C(Z.zero,Z.(mod) b d)
+      | AST_MODULO,_,_ -> top
+
+      
  
  
      (* comparison *)

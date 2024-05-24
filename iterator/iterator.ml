@@ -9,6 +9,8 @@ open Cfg
 open! Domains
 open! Domain
 
+let print_node node =
+    Printf.printf "node %d, %d, %d\n" node.node_id  (List.length node.node_in) (List.length node.node_out)
 
 
 module NodeMap = Map.Make(
@@ -56,12 +58,80 @@ let select_widening_node cfg =
     List.iter dfs cfg.cfg_nodes;
     !result
 
+let replace_fct cfg_old = 
+    let new_arc_id = ref ((List.fold_left (fun id arc -> max id arc.arc_id) 0 cfg_old.cfg_arcs)+1) in
+
+    let rec remove_fct cfg1 =
+        match cfg1.cfg_funcs with
+        | [] -> cfg1 (* il n'y a plus de fonctions *)
+        | [f] when f.func_name = "main" -> cfg1
+        | f::l when f.func_name = "main" ->
+                remove_fct {cfg_vars = cfg1.cfg_vars; cfg_funcs= l@[f]; cfg_nodes = cfg1.cfg_nodes; cfg_arcs = cfg1.cfg_arcs; cfg_init_entry = cfg1.cfg_init_entry; cfg_init_exit = cfg1.cfg_init_exit}
+        | fct::remains_fct -> begin
+            Printf.printf "remplace %s\n" fct.func_name;
+            let new_arc_list = ref cfg_old.cfg_arcs in
+            List.iter (fun arc -> 
+                let arc1 = {
+                    arc_id = !new_arc_id;
+                    arc_src = arc.arc_src;
+                    arc_dst = fct.func_entry;
+                    arc_inst = CFG_skip "enter function" } in
+                incr new_arc_id;
+                new_arc_list := arc1 :: !new_arc_list;
+                let arc2 = {
+                    arc_id = !new_arc_id;
+                    arc_src = fct.func_exit;
+                    arc_dst = arc.arc_dst;
+                    arc_inst = CFG_skip "leave function"} in
+                incr new_arc_id;
+                new_arc_list := arc2 :: !new_arc_list;
+
+                print_node fct.func_entry;
+                fct.func_entry.node_in <- arc1 :: fct.func_entry.node_in;
+                arc.arc_src.node_out <- arc1 :: arc.arc_src.node_out;
+                fct.func_exit.node_out <- arc2 :: fct.func_exit.node_out;
+                arc.arc_dst.node_in <- arc2 :: arc.arc_dst.node_in;
+                print_node fct.func_entry
+            ) fct.func_calls;
+            remove_fct {cfg_vars = cfg1.cfg_vars; cfg_funcs= remains_fct; cfg_nodes = cfg1.cfg_nodes; cfg_arcs = !new_arc_list; cfg_init_entry = cfg1.cfg_init_entry; cfg_init_exit = cfg1.cfg_init_exit}
+        end
+    in
+    let cfg2 = remove_fct cfg_old in
+
+    let is_not_fct_arc arc = match arc.arc_inst with
+        | CFG_call _ -> false
+        | _ -> true
+    in
+    
+    let new_node_list = List.map (fun node ->
+        node.node_in <- List.filter is_not_fct_arc node.node_in;
+        node.node_out <- List.filter is_not_fct_arc node.node_out;
+        node ) cfg2.cfg_nodes in
+
+    let new_arc_list = List.filter is_not_fct_arc cfg2.cfg_arcs in
+    
+    {   cfg_vars = cfg2.cfg_vars;
+        cfg_funcs = cfg2.cfg_funcs;
+        cfg_nodes = new_node_list;
+        cfg_arcs = new_arc_list;
+        cfg_init_entry = cfg2.cfg_init_entry;
+        cfg_init_exit = cfg2.cfg_init_exit;
+    }
+
+
+
+
+        
+
+
 module ITERATOR_FONCTOR(VD:Value_domain.VALUE_DOMAIN) = 
     struct
 
     module DOMAIN = Domain.DOMAIN_FUNCTOR(VD) 
 
-    let iterate filename cfg =
+    let iterate filename cfg_with_fct =
+        let cfg = replace_fct cfg_with_fct in
+        Format.printf "%a" Cfg_printer.print_cfg cfg;
         let _ = Random.self_init () in
 
         let envs = ref (List.fold_left (fun map node -> NodeMap.add node DOMAIN.bottom map) NodeMap.empty cfg.cfg_nodes) in
@@ -98,7 +168,7 @@ module ITERATOR_FONCTOR(VD:Value_domain.VALUE_DOMAIN) =
                             if not (DOMAIN.is_bottom subEnv) then
                                 print_endline ("File "^filename^", line "^(string_of_int (fst ext).pos_lnum)^": Assertion failure")
                             ; DOMAIN.guard curEnv (bexpr)
-                    | CFG_call fct -> ignore fct; failwith "TODO call"
+                    | CFG_call fct -> ignore fct; failwith "this case is impossible"
                 in DOMAIN.join value newVal
             ) DOMAIN.bottom node.node_in in
 

@@ -86,6 +86,10 @@ let num_divide a b = match a,b with
 | MinusInfty,a when inf a zero -> PlusInfty
 | MinusInfty,_ -> MinusInfty
 
+let num_modulo a b = match a,b with
+| N n1,N n2 -> N(apply_int_bin_op AST_MODULO n1 n2)
+| _ -> failwith "ne doit pas arriver dans interval modulo"
+
 
 let rec minList l = match l with
   | [] -> failwith "non"
@@ -145,6 +149,7 @@ let print_num fmt a = match a with
       minList l, maxList l 
      | AST_DIVIDE -> let l = [num_divide x z; num_divide x t; num_divide y z; num_divide y t] in
       minList l, maxList l 
+     | AST_MODULO when z=t && x=y -> let rep = num_modulo x z in rep,rep
      | AST_MODULO -> top
 
 
@@ -197,7 +202,7 @@ let print_num fmt a = match a with
       *)
       let rec compare x y op = let a,b = x in let c,d = y in match op with
       | AST_EQUAL -> (meet x y,meet x y)
-      | AST_NOT_EQUAL -> if a=b || c=d then (narrow x y, narrow y x) else x,y
+      | AST_NOT_EQUAL -> if a=b && c=d then (narrow x y, narrow y x) else x,y
       | AST_LESS_EQUAL -> (a,numbMin b d),(numbMax a c,d)
       | AST_LESS -> (a,numbMin b (num_minus d (N Z.one) true)),(numbMax (num_plus a (N Z.one) true) c,d)
       | AST_GREATER_EQUAL -> let r1,r2 = compare y x AST_LESS_EQUAL in r2,r1

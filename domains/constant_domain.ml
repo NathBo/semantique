@@ -57,6 +57,7 @@ let constains_zero a = match a with
      (* binary operation *)
      let binary a b op = match op,a,b with
      | AST_DIVIDE,_,b | AST_MODULO,_,b when constains_zero b -> raise DivisionByZero
+     | AST_MULTIPLY,Const(n),Top | AST_MULTIPLY,Top,Const(n) when n=Z.zero -> Const(Z.zero)
      | _ -> match a,b with
       | Const a, Const b -> Const (apply_int_bin_op op a b)
       | Bottom,_ | _,Bottom -> Bottom
@@ -147,6 +148,7 @@ let constains_zero a = match a with
       | AST_MINUS when b -> Const(Z.(-) n nr )
       | AST_MINUS -> Const(Z.(+) n nr )
       | AST_MULTIPLY when n<>Z.zero && Z.(mod) nr n = Z.zero -> Const(Z.(/) nr n)
+      | AST_MULTIPLY when n=Z.zero && nr=Z.zero -> Top
       | AST_MULTIPLY -> Bottom
       | AST_MODULO when not b && Z.abs nr>= Z.abs n -> Bottom     (*a%b<b*)
       | AST_MODULO when b && Z.abs nr > Z.abs n -> Bottom          (*a/b<=a*)

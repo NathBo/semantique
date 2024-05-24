@@ -98,11 +98,17 @@ module DOMAIN_DISJOINT (VD:Value_domain.VALUE_DOMAIN) : Domain_sig.DOMAIN =
       E.merge merge_fun a b
 
     (* abstract meet *)
-    let meet a b = failwith "pas implémenté3"
+    let meet a b = failwith "pas implémenté car pas utilisé dans l'itérateur"
 
 
     (* prints *)
-    let print fmt map =failwith "pas implémenté4"
+    let print fmt map =
+      Format.fprintf fmt "{@[";
+      E.iter (fun key value ->
+        Format.fprintf fmt "%s(%d) -> " key.var_name key.var_id;
+        Format.pp_print_list VD.print fmt value
+      ) map;
+      Format.fprintf fmt "@]}"
 
 
     (* widening *)

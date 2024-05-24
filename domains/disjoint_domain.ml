@@ -115,11 +115,26 @@ module DOMAIN_DISJOINT (VD:Value_domain.VALUE_DOMAIN) : Domain_sig.DOMAIN =
     let widen domain_A domain_B = failwith "pas implémenté5"
 
     (* narrowing *)
-    let narrow a b =failwith "pas implémenté6"
+    let narrow a b = a (*pas precis car de toute façon pas utilise par l'itérateur*)
 
 
     (*ne laisse pas passer les valeurs des variables qui feraient que int_expr ne serait pas à valeur dans vd*)
-    let rec filter env int_expr vd = failwith "pas implémenté7"
+    let rec filter env int_expr vdl = match int_expr with
+    | CFG_int_const z -> if List.exists (fun x -> VD.subset (VD.const z) x) vdl then env else E.map (fun x -> [VD.bottom]) env
+    | CFG_int_rand (n1,n2) -> if List.exists (fun x -> VD.subset (VD.rand n1 n2) x) vdl then env else E.map (fun x -> [VD.bottom]) env
+    | CFG_int_var v -> 
+      let a = envfind v env in
+      let b = vdl in
+      let aux acc b_elt =
+      addposslist (List.map (fun x -> VD.meet b_elt x) a) acc in
+      let l = (List.fold_left aux b []) in
+      if List.exists (fun x -> not (VD.is_bottom x)) l
+      then E.add v l env
+      else E.map (fun x -> [VD.bottom]) env
+    | CFG_int_unary (op,e) -> let a = evaluate env e in
+      filter env e vdl (*pas sur*)
+    | CFG_int_binary (op,e1,e2) ->
+      failwith "jsp"
 
 
     (* filter environments to keep only those satisfying the boolean expression *)
@@ -127,7 +142,7 @@ module DOMAIN_DISJOINT (VD:Value_domain.VALUE_DOMAIN) : Domain_sig.DOMAIN =
 
 
     (* whether an abstract element is included in another one *)
-    let subset a b =failwith "pas implémenté9"
+    let subset a b = failwith "pas implémenté9"
 
     (* whether the abstract element represents the empty set *)
     let is_bottom a  = failwith "pas implémenté10"

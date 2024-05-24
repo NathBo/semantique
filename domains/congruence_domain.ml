@@ -21,6 +21,11 @@ let constains_zero a = match a with
   | C (a,b) -> b = Z.zero || a = Z.one || (a=Z.zero && b=Z.zero)
 
 
+let divides a b = match a,b with
+| _,b when b=Z.zero -> true
+| a,b -> Z.(mod) a b = Z.zero
+
+
 
  
  module CONGRUENCEDOMAIN : Value_domain.VALUE_DOMAIN =
@@ -98,43 +103,41 @@ let constains_zero a = match a with
  
  
      (* set-theoretic operations *)
-     let join a b = match a,b with
-      | Top,_ | _,Top -> Top
-      | Const(n1),Const(n2) when n1 = n2 -> Const(n1)
-      | Const(_),Const(_) -> Top
-      | Const(n),Bottom | Bottom,Const(n) -> Const(n)
-      | _ -> Bottom
+     let join x y = match x,y with
+     | CBot,a | a,CBot -> a
+     | C(a,b),C(c,d) when Z.(mod) a c = Z.zero -> if Z.(mod) b c = d then C(c,d) else top
+     | C(a,b),C(c,d) when Z.(mod) c a = Z.zero -> if Z.(mod) d a = b then C(a,b) else top
+     | _ -> top
 
 
      let meet a b = match a,b with
-     | Bottom,_ | _,Bottom -> Bottom
-     | Const(n1),Const(n2) when n1 = n2 -> Const(n1)
-     | Const(_),Const(_) -> Bottom
-     | Const(n),Top | Top,Const(n) -> Const(n)
-     | _ -> Top
+     | CBot,_ | _,CBot -> CBot
+     | C(a,b),C(c,d) when Z.(mod) a c = Z.zero -> if Z.(mod) b c = d then C(a,b) else bottom
+     | C(a,b),C(c,d) when Z.(mod) c a = Z.zero -> if Z.(mod) d a = b then C(c,d) else bottom
+     | _ -> bottom
  
      (* widening *)
-     let widen a b = Top
+     let widen a b = top
  
      (* narrowing *)
      let narrow a b = match a,b with
-     | Bottom,_ | _,Top -> Bottom
-     | Top,_ -> Top
-     | a,Bottom -> (print_endline "on a rien change dans :";print_endline (to_string a);a)
-     | Const(n1),Const(n2) when n1 = n2 -> Bottom
-     | Const(_),Const(_) -> a
+     | CBot,_  -> CBot
+     | _,CBot -> a
+     | C(a,b),C(c,d) when Z.(mod) a c = Z.zero -> if Z.(mod) b c = d then bottom else C(a,b)
+     | C(a,b),C(c,d) when c = Z.(+) a a -> if Z.(mod) d a = b then C(c,a) else C(a,b)
+     | _ -> a
+
 
 
      (* subset inclusion of concretizations *)
      let subset a b = match a,b with
-     | Bottom,_ | _,Top -> true
-     | Top,_ -> false
-     | _,Bottom -> false
-     | Const(n1),Const(n2) when n1 = n2 -> true
-     | Const(_),Const(_) -> false
+     | CBot,_ -> true
+     | _,CBot -> false
+     | C(a,b),C(c,d) when Z.(mod) a c = Z.zero -> Z.(mod) b c = d
+     | _ -> true
  
      (* check the emptiness of the concretization *)
-     let is_bottom a = a = Bottom
+     let is_bottom a = a = CBot
  
      (* backards unary operation *)
      (* [bwd_unary x op r] return x':

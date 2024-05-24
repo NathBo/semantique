@@ -13,6 +13,7 @@ module Iter_Concrete = ITERATOR_FONCTOR(Concrete_domain.CONCRETE_DOMAIN)
 module Iter_Interval = ITERATOR_FONCTOR(Interval_domain.INTERVALDOMAIN)
 module Iter_Sign = ITERATOR_FONCTOR(Sign_domain.SIGN_DOMAIN)
 module Iter_Congruence = ITERATOR_FONCTOR(Congruence_domain.CONGRUENCEDOMAIN)
+module Iter_Product = ITERATOR_FONCTOR(Product_domain.PRODUCTDOMAIN)
 
 (* parse filename *)
 let doit filename =
@@ -28,6 +29,7 @@ let doit filename =
     | "interval" -> Iter_Interval.iterate filename cfg
     | "sign" -> Iter_Sign.iterate filename cfg
     | "congruence" -> Iter_Congruence.iterate filename cfg
+    | "product" -> Iter_Product.iterate filename cfg
     | _ ->          Iter_Interval.iterate filename cfg
 
 

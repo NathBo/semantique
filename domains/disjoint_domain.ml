@@ -67,41 +67,41 @@ module DOMAIN_DISJOINT (VD:Value_domain.VALUE_DOMAIN) : Domain_sig.DOMAIN =
 
 
     (* assign an integer expression to a variable *)
-    let assign (env:VD.t list E.t) var int_expr = failwith "pas implémenté"
+    let assign (env:VD.t list E.t) var int_expr = failwith "pas implémenté1"
 
 
     (* abstract join *)
     let join a b =
-      failwith "pas implémenté"
+      failwith "pas implémenté2"
 
     (* abstract meet *)
-    let meet a b = failwith "pas implémenté"
+    let meet a b = failwith "pas implémenté3"
 
 
     (* prints *)
-    let print fmt map =failwith "pas implémenté"
+    let print fmt map =failwith "pas implémenté4"
 
 
     (* widening *)
-    let widen domain_A domain_B = failwith "pas implémenté"
+    let widen domain_A domain_B = failwith "pas implémenté5"
 
     (* narrowing *)
-    let narrow a b =failwith "pas implémenté"
+    let narrow a b =failwith "pas implémenté6"
 
 
     (*ne laisse pas passer les valeurs des variables qui feraient que int_expr ne serait pas à valeur dans vd*)
-    let rec filter env int_expr vd = failwith "pas implémenté"
+    let rec filter env int_expr vd = failwith "pas implémenté7"
 
 
     (* filter environments to keep only those satisfying the boolean expression *)
-    let rec guard a bool_expr = failwith "pas implémenté"
+    let rec guard a bool_expr = failwith "pas implémenté8"
 
 
     (* whether an abstract element is included in another one *)
-    let subset a b =failwith "pas implémenté"
+    let subset a b =failwith "pas implémenté9"
 
     (* whether the abstract element represents the empty set *)
-    let is_bottom =failwith "pas implémenté"
+    let is_bottom a  = failwith "pas implémenté10"
 
 
   end

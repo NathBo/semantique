@@ -176,7 +176,7 @@ let divides a b = match a,b with
       let rep2 = if constains_zero x && constains_zero r then y else meet y (binary r x AST_DIVIDE) in
       rep1,rep2
      | AST_DIVIDE,_,_,_ -> x,y
-     | AST_MODULO,C(a,b),C(c,d),C(e,f) when c=Z.zero && divides d a && e = Z.zero -> if f = Z.(mod) b d then x,y else (CBot,CBot)
+     | AST_MODULO,C(a,b),C(c,d),C(e,f) when c=Z.zero && e = Z.zero -> if f = Z.(mod) b d then C(d,Z.(mod) a d),y else (CBot,CBot)
      | AST_MODULO,_,_,_ -> x,y
 
      

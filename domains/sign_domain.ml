@@ -120,6 +120,7 @@ let contains_zero s = match s with
      let join a b =
       match a, b with
       | STop, _ | _, STop -> STop
+      | SBot,x | x,SBot -> x
       | a, b when is_minus a && is_plus b -> STop
       | b, a when is_minus a && is_plus b -> STop
       | a, b when a = b -> a
@@ -127,14 +128,15 @@ let contains_zero s = match s with
       | a, Zero when is_minus a -> Minus
       | Zero, a when is_plus a -> Plus
       | a, Zero when is_plus a -> Plus
-      | _ -> failwith "il manque un cas dans les join"
+      | _ -> failwith ("il manque un cas dans les join "^(to_string a)^(to_string b))
     
       
 
 
      let meet a b =
       match a, b with
-      | SBot, _ | _, SBot -> STop
+      | SBot, _ | _, SBot -> SBot
+      | STop,x | x,STop -> x
       | a, b when a = b -> a
       | Zero,a when contains_zero a -> Zero
       | a,Zero when contains_zero a -> Zero
@@ -143,7 +145,11 @@ let contains_zero s = match s with
       | b,a when is_minus a && is_plus b -> SBot
       | Zero,b when not (contains_zero b) -> SBot
       | a,Zero when not(contains_zero a) -> SBot
-      | _ -> failwith ("il manque un cas dans les meet"^(to_string a)^(to_string b))
+      | StMinus,x when is_minus x -> StMinus
+      | x,StMinus when is_minus x -> StMinus
+      | StPlus,x when is_plus x -> StPlus
+      | x,StPlus when is_plus x -> StPlus
+      | _ -> failwith ("il manque un cas dans les meet "^(to_string a)^(to_string b))
 
 
 
@@ -157,12 +163,17 @@ let contains_zero s = match s with
       | STop,Plus -> StMinus
       | STop,Zero -> STop
       | STop,_ -> failwith "normalement n'arrive pas dans narrow"
+      | Zero,x when contains_zero x -> SBot
+      | StPlus,x when is_plus x -> SBot
+      | StPlus,_ -> StPlus
+      | StMinus,x when is_minus x -> SBot
+      | StMinus,_ -> StMinus
       | Plus,Zero | Plus,Minus -> StPlus
       | Minus,Zero | Minus,Plus -> StMinus
       | Plus,StPlus -> Zero
       | Minus,StMinus -> Zero
       | Plus,StMinus | Minus,StPlus -> a
-      | _ -> failwith "il manque des cas dans narrow"
+      | _ -> failwith ("il manque un cas dans les narrow "^(to_string a)^(to_string b))
 
 
 
@@ -235,7 +246,7 @@ let contains_zero s = match s with
       let l = [|StMinus;Zero;StPlus|] in
       for i=0 to 2 do
         if subset (binary l.(i) y op) r
-        then repx := join !repx l.(i)
+        then (repx := join !repx l.(i))
       done;
       for i=0 to 2 do
         if subset (binary x l.(i) op) r

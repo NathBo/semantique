@@ -177,7 +177,6 @@ let print_num fmt a = match a with
  
      (* widening *)
      let widen x y =
-         if x = (MinusInfty,PlusInfty) then failwith "aa";
          let left = if inf (fst y) (fst x) then MinusInfty else (fst x) in
          let right = if sup (snd y) (snd x) then PlusInfty else (snd x) in
          (left, right)

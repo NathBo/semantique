@@ -233,7 +233,9 @@ let print_num fmt a = match a with
      | AST_MINUS -> (numbMax a (num_plus e c true),numbMin b (num_plus f d true)),(numbMax c (num_minus a e true),numbMin d (num_minus b f true))
      | AST_MODULO -> x,y                      (*les intervalles et modulo marchent vraiment pas ensemble*)
      | AST_DIVIDE -> meet x (binary r y AST_MULTIPLY),meet y (lenientbinary x r AST_DIVIDE)
-     | AST_MULTIPLY -> meet x (lenientbinary r y AST_DIVIDE),meet y (lenientbinary r x AST_DIVIDE)
+     | AST_MULTIPLY -> let rep1 = if contains_zero y && contains_zero r then x else meet x (lenientbinary r y AST_DIVIDE) in
+      let rep2 = if contains_zero x && contains_zero r then y else meet y (lenientbinary r x AST_DIVIDE) in
+      rep1,rep2
 
 
 

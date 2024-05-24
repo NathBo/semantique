@@ -81,11 +81,11 @@ module CD = CONGRUENCEDOMAIN
 
      (* subset inclusion of concretizations *)
      let subset (i1,c1) (i2,c2) =
-      ID.subset i1 i2, CD.subset c1 c2
+      ID.subset i1 i2 && CD.subset c1 c2
  
      (* check the emptiness of the concretization *)
-     let is_bottom (i1,c1) (i2,c2) =
-      ID.is_bottom i1 i2 && CD.is_bottom c1 c2
+     let is_bottom (i1,c1) =
+      ID.is_bottom i1 && CD.is_bottom c1
 
 
 
@@ -98,24 +98,21 @@ module CD = CONGRUENCEDOMAIN
         a safe, but not precise implementation, would be:
         compare x y op = (x,y)
       *)
-      let rec compare x y op = let a,b = x in let c,d = y in match op with
-      | AST_EQUAL -> (meet x y,meet x y)
-      | AST_NOT_EQUAL -> if a=b && c=d then (narrow x y, narrow y x) else x,y
-      | AST_LESS_EQUAL -> (a,numbMin b d),(numbMax a c,d)
-      | AST_LESS -> (a,numbMin b (num_minus d (N Z.one) true)),(numbMax (num_plus a (N Z.one) true) c,d)
-      | AST_GREATER_EQUAL -> let r1,r2 = compare y x AST_LESS_EQUAL in r2,r1
-      | AST_GREATER -> let r1,r2 = compare y x AST_LESS in r2,r1
-      
- 
+      let rec compare (i1,c1) (i2,c2) op =
+        let a1,a2 =  ID.compare i1 i2 op in
+        let b1,b2 = CD.compare c1 c2 op in
+        (a1,b1),(a2,b2)
+
+
+
      (* backards unary operation *)
      (* [bwd_unary x op r] return x':
         - x' abstracts the set of v in x such as op v is in r
         i.e., we fiter the abstract values x knowing the result r of applying
         the operation on x
       *)
-     let bwd_unary x op r = match op with
-     | AST_UNARY_PLUS -> meet x r
-     | AST_UNARY_MINUS -> meet (num_un_minus(snd r),num_un_minus(fst r)) x
+     let bwd_unary (i1,c1) op (i2,c2) =
+      ID.bwd_unary i1 op i2, CD.bwd_unary c1 op c2
  
 
 
@@ -126,20 +123,16 @@ module CD = CONGRUENCEDOMAIN
        i.e., we filter the abstract values x and y knowing that, after
        applying the operation op, the result is in r
        *)
-     let bwd_binary x y op r = let a,b = x in let c,d = y in let e,f = r in if op=AST_DIVIDE && contains_zero y then raise DivisionByZero else match op with
-     | AST_PLUS -> meet x (binary r y AST_MINUS),meet y (binary r x AST_MINUS)
-     | AST_MINUS -> (numbMax a (num_plus e c true),numbMin b (num_plus f d true)),(numbMax c (num_minus a e true),numbMin d (num_minus b f true))
-     | AST_MODULO -> x,y                      (*les intervalles et modulo marchent vraiment pas ensemble*)
-     | AST_DIVIDE -> meet x (binary r y AST_MULTIPLY),meet y (lenientbinary x r AST_DIVIDE)
-     | AST_MULTIPLY -> let rep1 = if contains_zero y && contains_zero r then x else meet x (lenientbinary r y AST_DIVIDE) in
-      let rep2 = if contains_zero x && contains_zero r then y else meet y (lenientbinary r x AST_DIVIDE) in
-      rep1,rep2
+     let bwd_binary (i1,c1) (i2,c2) op (i3,c3) =
+      let a1,a2 = ID.bwd_binary i1 i2 op i3 in
+      let b1,b2 = CD.bwd_binary c1 c2 op c3 in
+      (a1,b1),(a2,b2)
 
 
 
  
      (* print abstract element *)
-     let print fmt a = Format.fprintf fmt "[%a,%a]" print_num (fst a) print_num (snd a)
+     let print fmt a = Format.fprintf fmt "(%a,%a)" ID.print (fst a) CD.print (snd a)
      
 
  

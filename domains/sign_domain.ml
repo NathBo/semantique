@@ -51,6 +51,16 @@ let contains_zero s = match s with
  
      (* bottom value: empty set *)
      let bottom = SBot
+
+
+     let to_string a = match a with
+     | STop -> "Top"
+     | SBot -> "Bot"
+     | Plus -> "Plus"
+     | Minus -> "Minus"
+     | StPlus -> "StPlus"
+     | StMinus -> "StMinus"
+     | Zero -> "Zero"
  
      (* constant: {c} *)
      let const n = if n=Z.zero then Zero
@@ -88,6 +98,7 @@ let contains_zero s = match s with
      | _ -> match op,a,b with
         | _,SBot,_ | _,_,SBot -> SBot
         | _,STop,_ | _,_,STop -> STop
+        | AST_PLUS,Zero,x | AST_PLUS,x,Zero -> x
         | AST_PLUS,Minus,StMinus | AST_PLUS,StMinus,Minus | AST_PLUS,StMinus,StMinus -> StMinus
         | AST_PLUS,Plus,StPlus | AST_PLUS,StPlus,Plus | AST_PLUS,StPlus,StPlus -> StPlus
         | AST_PLUS,Plus,Plus -> Plus
@@ -109,6 +120,7 @@ let contains_zero s = match s with
      let join a b =
       match a, b with
       | STop, _ | _, STop -> STop
+      | SBot,x | x,SBot -> x
       | a, b when is_minus a && is_plus b -> STop
       | b, a when is_minus a && is_plus b -> STop
       | a, b when a = b -> a
@@ -116,21 +128,28 @@ let contains_zero s = match s with
       | a, Zero when is_minus a -> Minus
       | Zero, a when is_plus a -> Plus
       | a, Zero when is_plus a -> Plus
-      | _ -> failwith "il manque un cas dans les join"
+      | _ -> failwith ("il manque un cas dans les join "^(to_string a)^(to_string b))
     
       
 
 
      let meet a b =
       match a, b with
-      | SBot, _ | _, SBot -> STop
+      | SBot, _ | _, SBot -> SBot
+      | STop,x | x,STop -> x
       | a, b when a = b -> a
       | Zero,a when contains_zero a -> Zero
       | a,Zero when contains_zero a -> Zero
       | Plus,Minus | Minus,Plus -> Zero
       | a, b when is_minus a && is_plus b -> SBot
       | b,a when is_minus a && is_plus b -> SBot
-      | _ -> failwith "il manque un cas dans les meet"
+      | Zero,b when not (contains_zero b) -> SBot
+      | a,Zero when not(contains_zero a) -> SBot
+      | StMinus,x when is_minus x -> StMinus
+      | x,StMinus when is_minus x -> StMinus
+      | StPlus,x when is_plus x -> StPlus
+      | x,StPlus when is_plus x -> StPlus
+      | _ -> failwith ("il manque un cas dans les meet "^(to_string a)^(to_string b))
 
 
 
@@ -144,12 +163,17 @@ let contains_zero s = match s with
       | STop,Plus -> StMinus
       | STop,Zero -> STop
       | STop,_ -> failwith "normalement n'arrive pas dans narrow"
+      | Zero,x when contains_zero x -> SBot
+      | StPlus,x when is_plus x -> SBot
+      | StPlus,_ -> StPlus
+      | StMinus,x when is_minus x -> SBot
+      | StMinus,_ -> StMinus
       | Plus,Zero | Plus,Minus -> StPlus
       | Minus,Zero | Minus,Plus -> StMinus
       | Plus,StPlus -> Zero
       | Minus,StMinus -> Zero
       | Plus,StMinus | Minus,StPlus -> a
-      | _ -> failwith "il manque des cas dans narrow"
+      | _ -> failwith ("il manque un cas dans les narrow "^(to_string a)^(to_string b))
 
 
 
@@ -174,14 +198,15 @@ let contains_zero s = match s with
       | AST_GREATER_EQUAL,_,_ -> let a,b = compare y x AST_LESS_EQUAL in (b,a)
       | AST_LESS,_,STop | AST_LESS_EQUAL,_,STop -> (x,STop)
       | AST_LESS,STop,_ | AST_LESS_EQUAL,STop,_ -> (y,y)
-      | (AST_LESS,x,y) | (AST_LESS_EQUAL,x,y) when x = y -> (x,y)
-      | AST_LESS,Minus,Zero | AST_LESS,StMinus,Zero | AST_LESS_EQUAL,StMinus,Zero -> StMinus,Zero
-      | AST_LESS_EQUAL,Minus,Zero -> Minus,Zero
-      | AST_LESS_EQUAL,Zero,y when not (is_minus y) -> Zero,y
-      | AST_LESS,Zero,y when is_plus y -> Zero,StPlus
-      | _,Plus,StPlus | _,StPlus,Plus -> StPlus,StPlus
-      | AST_LESS,Plus,Minus -> Zero,Zero
-      | _ -> SBot,SBot
+      | (AST_LESS_EQUAL,x,y) when x = y -> (x,y)
+      | AST_LESS_EQUAL,Plus,Minus -> Zero,Zero
+      | _,StMinus,_ -> StMinus,y
+      | _,Minus,_ -> Minus,y
+      | AST_LESS_EQUAL,Zero,_ -> let rep = meet Plus y in if rep = SBot then (SBot,SBot) else Zero,rep
+      | AST_LESS,Zero,_ -> let rep = meet StPlus y in if rep = SBot then (SBot,SBot) else Zero,rep
+      | AST_LESS_EQUAL,Plus,_ -> let rep = meet Plus y in if rep = SBot then (SBot,SBot) else Plus,rep
+      | AST_LESS,Plus,_ -> let rep = meet StPlus y in if rep = SBot then (SBot,SBot) else Plus,rep
+      | _,StPlus,_ -> let rep = meet StPlus y in if rep = SBot then (SBot,SBot) else StPlus,rep
 
 
  
@@ -221,7 +246,7 @@ let contains_zero s = match s with
       let l = [|StMinus;Zero;StPlus|] in
       for i=0 to 2 do
         if subset (binary l.(i) y op) r
-        then repx := join !repx l.(i)
+        then (repx := join !repx l.(i))
       done;
       for i=0 to 2 do
         if subset (binary x l.(i) op) r
@@ -240,14 +265,6 @@ let contains_zero s = match s with
      | StMinus -> Format.fprintf fmt "StMinus"
      | Zero -> Format.fprintf fmt "Zero"
 
-     let to_string a = match a with
-     | STop -> "Top"
-     | SBot -> "Bot"
-     | Plus -> "Plus"
-     | Minus -> "Minus"
-     | StPlus -> "StPlus"
-     | StMinus -> "StMinus"
-     | Zero -> "Zero"
  
  end
  

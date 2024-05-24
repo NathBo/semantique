@@ -268,6 +268,7 @@ treat_examples "other" "other" "--domain constants" ""
 treat_examples "fonctions" "fonctions" "--domain interval" ""
 treat_examples "constant" "Constants operations (II)" "--domain congruence" ""
 treat_examples "congruence" "congruence" "--domain congruence" ""
+treat_examples "sign" "sign" "--domain sign" ""
 echo "</table>"                                   >> $index_html
 echo "</body>"                                    >> $index_html
 echo "</html>"                                    >> $index_html

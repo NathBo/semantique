@@ -89,7 +89,7 @@ module ITERATOR_FONCTOR(VD:Value_domain.VALUE_DOMAIN) =
                     | CFG_assign (var,iexpr) -> begin
                         try DOMAIN.assign curEnv var iexpr
                         with | Frontend.Abstract_syntax_tree.DivisionByZero -> 
-                            print_endline ("File "^filename^", line "^(" TODO ")^": Division by zero");
+                            print_endline ("Warning : File "^filename^": Division by zero");
                             DOMAIN.bottom (*TODO *)
                         end
                     | CFG_guard bexpr -> DOMAIN.guard curEnv bexpr

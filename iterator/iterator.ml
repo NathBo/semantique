@@ -86,7 +86,12 @@ module ITERATOR_FONCTOR(VD:Value_domain.VALUE_DOMAIN) =
                 let curEnv = NodeMap.find source !envs in
                 let newVal = match arc.arc_inst with
                     | CFG_skip _ -> curEnv 
-                    | CFG_assign (var,iexpr) -> DOMAIN.assign curEnv var iexpr
+                    | CFG_assign (var,iexpr) -> begin
+                        try DOMAIN.assign curEnv var iexpr
+                        with | Frontend.Abstract_syntax_tree.DivisionByZero -> 
+                            print_endline ("File "^filename^", line "^(" TODO ")^": Division by zero");
+                            DOMAIN.bottom (*TODO *)
+                        end
                     | CFG_guard bexpr -> DOMAIN.guard curEnv bexpr
                     | CFG_assert (bexpr,ext) ->
                             let subEnv = DOMAIN.guard curEnv (negate bexpr) in

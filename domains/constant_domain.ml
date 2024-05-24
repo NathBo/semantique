@@ -147,6 +147,7 @@ let constains_zero a = match a with
       | AST_MINUS when b -> Const(Z.(-) n nr )
       | AST_MINUS -> Const(Z.(+) n nr )
       | AST_MULTIPLY when n<>Z.zero && Z.(mod) nr n = Z.zero -> Const(Z.(/) nr n)
+      | AST_MULTIPLY when n=Z.zero && nr=Z.zero -> Top
       | AST_MULTIPLY -> Bottom
       | AST_MODULO when not b && Z.abs nr>= Z.abs n -> Bottom     (*a%b<b*)
       | AST_MODULO when b && Z.abs nr > Z.abs n -> Bottom          (*a/b<=a*)

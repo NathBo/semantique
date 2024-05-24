@@ -171,7 +171,11 @@ let print_num fmt a = match a with
      let meet x y = let a,b = x in let c,d = y in (numbMax a c,numbMin b d)
  
      (* widening *)
-     let widen a b = top
+     let widen x y =
+         if x = (MinusInfty,PlusInfty) then failwith "aa";
+         let left = if inf (fst y) (fst x) then MinusInfty else (fst x) in
+         let right = if sup (snd y) (snd x) then PlusInfty else (snd x) in
+         (left, right)
  
      (* narrowing *)
      let narrow x y = let a,b = x in let c,d = y in let x = if inf a c then a else if a=d then PlusInfty else  d in

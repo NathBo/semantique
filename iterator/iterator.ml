@@ -77,7 +77,7 @@ module ITERATOR_FONCTOR(VD:Value_domain.VALUE_DOMAIN) =
             worklist := List.tl !worklist;
 
             
-            (*Format.fprintf Format.std_formatter "update node %d\n" node.node_id;*)
+            Format.fprintf Format.std_formatter "update node %d\n" node.node_id;
             let old_value = NodeMap.find node !envs in
 
             let update = List.fold_left (fun value arc -> 
@@ -92,7 +92,7 @@ module ITERATOR_FONCTOR(VD:Value_domain.VALUE_DOMAIN) =
                             let subEnv = DOMAIN.guard curEnv (negate bexpr) in
                             if not (DOMAIN.is_bottom subEnv) then
                                 print_endline ("File "^filename^", line "^(string_of_int (fst ext).pos_lnum)^": Assertion failure")
-                            ; curEnv
+                            ; DOMAIN.guard curEnv (bexpr)
                     | CFG_call fct -> ignore fct; failwith "TODO call"
                 in DOMAIN.join value newVal
             ) DOMAIN.bottom node.node_in in
@@ -102,12 +102,13 @@ module ITERATOR_FONCTOR(VD:Value_domain.VALUE_DOMAIN) =
                 if is_widen then DOMAIN.widen old_value update
                             else update in
 
-            let no_change = ((DOMAIN.subset old_value widen_value) && (DOMAIN.subset update widen_value)) in
+            let no_change = ((DOMAIN.subset old_value widen_value) && (DOMAIN.subset widen_value old_value)) in
             envs := NodeMap.add node widen_value !envs ;
 
-            (*DOMAIN.print Format.std_formatter old_value;
-            DOMAIN.print Format.std_formatter update;
-            Format.print_newline ();*)
+            Format.fprintf Format.std_formatter "old->new %d\n" node.node_id;
+            DOMAIN.print Format.std_formatter old_value;
+            DOMAIN.print Format.std_formatter widen_value;
+            Format.print_newline ();
 
             let first_time = not (NodeSet.mem node !already_seen) in
             if (not no_change) || first_time then begin

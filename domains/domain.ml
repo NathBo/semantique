@@ -80,8 +80,31 @@ module DOMAIN_FUNCTOR (VD:Value_domain.VALUE_DOMAIN) =
       | (Some vd1,Some vd2) ->  Some (VD.meet vd1 vd2) in
       Env.merge aux a b
 
+
+    (* prints *)
+    let print fmt map =
+      Format.fprintf fmt "{@[";
+      Env.iter (fun key value ->
+        Format.fprintf fmt "%s -> %a;@ " key.var_name VD.print value
+      ) map;
+      Format.fprintf fmt "@]}"
+
+
     (* widening *)
-    let widen a b = failwith "pas implémenté widen"
+    let widen domain_A domain_B = 
+        Format.fprintf Format.std_formatter "widen :\n";
+        print Format.std_formatter domain_A;
+        print Format.std_formatter domain_B;
+        let a = Env.merge 
+            (fun var valA valB -> match valA,valB with
+                | (None, None) -> failwith "impossible"
+                | (None, Some x) -> Some x
+                | (Some x, None) -> Some x
+                | (Some x,Some y) -> Some (VD.widen x y)
+            ) domain_A domain_B
+        in print Format.std_formatter a;
+        Format.print_newline();
+        a
 
     (* narrowing *)
     let narrow a b =
@@ -117,11 +140,11 @@ module DOMAIN_FUNCTOR (VD:Value_domain.VALUE_DOMAIN) =
         | AST_OR -> join (guard a e1) (guard a e2)
         end
       | CFG_compare (op,e1,e2) -> begin let vd1,vd2 = (VD.compare (evaluate a e1) (evaluate a e2) op) in
-        print_endline "On a l'environnement :";
+        (*print_endline "On a l'environnement :";
         print_endline (to_string a);
         print_endline "On a les valeurs de :";
         print_endline (VD.to_string vd1);
-        print_endline (VD.to_string vd2);
+        print_endline (VD.to_string vd2);*)
         let x = filter (filter a e1 vd1) e2 vd2 in print_endline "L'environnement final est :"; print_endline (to_string x); x end
 
 
@@ -136,14 +159,6 @@ module DOMAIN_FUNCTOR (VD:Value_domain.VALUE_DOMAIN) =
       let aux _ x =
         VD.is_bottom x in
       Env.for_all aux  
-
-    (* prints *)
-    let print fmt map =
-      Format.fprintf fmt "{@[";
-      Env.iter (fun key value ->
-        Format.fprintf fmt "%s -> %a;@ " key.var_name VD.print value
-      ) map;
-      Format.fprintf fmt "@]}"
 
 
   end

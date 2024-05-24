@@ -75,7 +75,7 @@ let divides a b = match a,b with
       | AST_MULTIPLY,C(a,b),C(c,d) when a=c-> C(a, Z.( * ) b d)
       | AST_MULTIPLY,_,_ -> top
       | AST_DIVIDE,_,_ -> top
-      | AST_MODULO,C(a,b),C(c,d) when c=Z.zero && Z.(mod) a d = Z.zero -> C(Z.zero,Z.(mod) b d)
+      | AST_MODULO,C(a,b),C(c,d) when c=Z.zero && divides d a -> C(Z.zero,Z.(mod) b d)
       | AST_MODULO,_,_ -> top
 
       
@@ -94,9 +94,9 @@ let divides a b = match a,b with
       | CBot,_,_ | _,CBot,_ -> (CBot,CBot)
       | C(a,b),C(c,d),AST_EQUAL when a=c -> if b=d then (x,y) else (CBot,CBot)
       | C(a,b),C(c,d),AST_NOT_EQUAL when a=c -> if b<>d then (x,y) else (CBot,CBot)
-      | C(a,b),C(c,d),AST_EQUAL when Z.(mod) a c = Z.zero -> if Z.(mod) b c = d then (x,y) else (CBot,CBot)
-      | C(a,b),C(c,d),AST_NOT_EQUAL when Z.(mod) a c = Z.zero -> if Z.(mod) b c <> d then (x,y) else (CBot,CBot)
-      | C(a,b),C(c,d),_ when Z.(mod) c a = Z.zero -> let rep1,rep2 = compare y x op in rep2,rep1
+      | C(a,b),C(c,d),AST_EQUAL when divides c a -> if divides c (Z.(-) b d) then (x,y) else (CBot,CBot)
+      | C(a,b),C(c,d),AST_NOT_EQUAL when divides c a -> if divides c (Z.(-) b d) then (x,y) else (CBot,CBot)
+      | C(a,b),C(c,d),_ when divides a c -> let rep1,rep2 = compare y x op in rep2,rep1
       | _ -> (x,y)
  
  
@@ -105,15 +105,15 @@ let divides a b = match a,b with
      (* set-theoretic operations *)
      let join x y = match x,y with
      | CBot,a | a,CBot -> a
-     | C(a,b),C(c,d) when Z.(mod) a c = Z.zero -> if Z.(mod) b c = d then C(c,d) else top
-     | C(a,b),C(c,d) when Z.(mod) c a = Z.zero -> if Z.(mod) d a = b then C(a,b) else top
+     | C(a,b),C(c,d) when divides c a -> if divides c (Z.(-) b d) then C(c,d) else top
+     | C(a,b),C(c,d) when divides a c -> if divides a (Z.(-) d b) then C(a,b) else top
      | _ -> top
 
 
      let meet a b = match a,b with
      | CBot,_ | _,CBot -> CBot
-     | C(a,b),C(c,d) when Z.(mod) a c = Z.zero -> if Z.(mod) b c = d then C(a,b) else bottom
-     | C(a,b),C(c,d) when Z.(mod) c a = Z.zero -> if Z.(mod) d a = b then C(c,d) else bottom
+     | C(a,b),C(c,d) when divides c a -> if divides c (Z.(-) b d) then C(a,b) else bottom
+     | C(a,b),C(c,d) when divides a c -> if divides a (Z.(-) d b) then C(c,d) else bottom
      | _ -> bottom
  
      (* widening *)
@@ -123,8 +123,8 @@ let divides a b = match a,b with
      let narrow a b = match a,b with
      | CBot,_  -> CBot
      | _,CBot -> a
-     | C(a,b),C(c,d) when Z.(mod) a c = Z.zero -> if Z.(mod) b c = d then bottom else C(a,b)
-     | C(a,b),C(c,d) when c = Z.(+) a a -> if Z.(mod) d a = b then C(c,a) else C(a,b)
+     | C(a,b),C(c,d) when divides a c -> if divides c (Z.(-) b d) then bottom else C(a,b)
+     | C(a,b),C(c,d) when c = Z.(+) a a -> if divides a (Z.(-) d b) then C(c,a) else C(a,b)
      | _ -> a
 
 
@@ -133,7 +133,7 @@ let divides a b = match a,b with
      let subset a b = match a,b with
      | CBot,_ -> true
      | _,CBot -> false
-     | C(a,b),C(c,d) when Z.(mod) a c = Z.zero -> Z.(mod) b c = d
+     | C(a,b),C(c,d) when divides c a -> divides c (Z.(-) b d)
      | _ -> true
  
      (* check the emptiness of the concretization *)

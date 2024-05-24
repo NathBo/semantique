@@ -145,10 +145,9 @@ let divides a b = match a,b with
         i.e., we fiter the abstract values x knowing the result r of applying
         the operation on x
       *)
-     let bwd_unary x op r = match x with
-      | Const n when subset (Const (apply_int_un_op op n)) r -> x
-      | Const _ -> Bottom
-      | _ -> meet x r
+     let bwd_unary x op r = match op with
+     | AST_UNARY_PLUS -> meet x r
+     | AST_UNARY_MINUS -> meet (unary x AST_UNARY_MINUS) r
  
      (* backward binary operation *)
      (* [bwd_binary x y op r] returns (x',y') where
@@ -182,9 +181,8 @@ let divides a b = match a,b with
  
      (* print abstract element *)
      let print fmt a = match a with
-     | Top -> Format.fprintf fmt "Top"
-     | Bottom -> Format.fprintf fmt "Bottom"
-     | Const n -> Format.fprintf fmt "%i" (Z.to_int n)
+     | CBot -> Format.fprintf fmt "CBot"
+     | C(a,b) -> Format.fprintf fmt "%aZ+%a" Z.pp_print a Z.pp_print b
 
  
  end

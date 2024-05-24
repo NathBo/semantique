@@ -9,10 +9,6 @@ open Cfg
 open! Domains
 open! Domain
 
-let print_node node =
-    Printf.printf "node %d, %d, %d\n" node.node_id  (List.length node.node_in) (List.length node.node_out)
-
-
 module NodeMap = Map.Make(
     struct
         let compare = compare
@@ -68,8 +64,7 @@ let replace_fct cfg_old =
         | f::l when f.func_name = "main" ->
                 remove_fct {cfg_vars = cfg1.cfg_vars; cfg_funcs= l@[f]; cfg_nodes = cfg1.cfg_nodes; cfg_arcs = cfg1.cfg_arcs; cfg_init_entry = cfg1.cfg_init_entry; cfg_init_exit = cfg1.cfg_init_exit}
         | fct::remains_fct -> begin
-            Printf.printf "remplace %s\n" fct.func_name;
-            let new_arc_list = ref cfg_old.cfg_arcs in
+            let new_arc_list = ref cfg1.cfg_arcs in
             List.iter (fun arc -> 
                 let arc1 = {
                     arc_id = !new_arc_id;
@@ -86,12 +81,10 @@ let replace_fct cfg_old =
                 incr new_arc_id;
                 new_arc_list := arc2 :: !new_arc_list;
 
-                print_node fct.func_entry;
                 fct.func_entry.node_in <- arc1 :: fct.func_entry.node_in;
                 arc.arc_src.node_out <- arc1 :: arc.arc_src.node_out;
                 fct.func_exit.node_out <- arc2 :: fct.func_exit.node_out;
                 arc.arc_dst.node_in <- arc2 :: arc.arc_dst.node_in;
-                print_node fct.func_entry
             ) fct.func_calls;
             remove_fct {cfg_vars = cfg1.cfg_vars; cfg_funcs= remains_fct; cfg_nodes = cfg1.cfg_nodes; cfg_arcs = !new_arc_list; cfg_init_entry = cfg1.cfg_init_entry; cfg_init_exit = cfg1.cfg_init_exit}
         end
@@ -152,7 +145,7 @@ module ITERATOR_FONCTOR(VD:Value_domain.VALUE_DOMAIN) =
 
             let update = List.fold_left (fun value arc -> 
                 let source = arc.arc_src in
-                (*Format.fprintf Format.std_formatter " -> from %d\n" source.node_id;*)
+                Format.fprintf Format.std_formatter " -> from %d\n" source.node_id;
                 let curEnv = NodeMap.find source !envs in
                 let newVal = match arc.arc_inst with
                     | CFG_skip _ -> curEnv 

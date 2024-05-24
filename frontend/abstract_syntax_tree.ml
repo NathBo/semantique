@@ -77,7 +77,7 @@ let apply_int_bin_op op a b = match op with
   | AST_MINUS -> Z.(-) a b
   | AST_MULTIPLY -> Z.( * ) a b
   | AST_DIVIDE -> Z.(/) a b
-  | AST_MODULO when Z.gt b Z.zero -> Z.(mod) a b
+  | AST_MODULO when Z.gt a Z.zero -> Z.(mod) a b
   | AST_MODULO -> Z.(~-)(Z.(mod) a b)
 
 

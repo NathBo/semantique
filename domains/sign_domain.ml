@@ -51,6 +51,16 @@ let contains_zero s = match s with
  
      (* bottom value: empty set *)
      let bottom = SBot
+
+
+     let to_string a = match a with
+     | STop -> "Top"
+     | SBot -> "Bot"
+     | Plus -> "Plus"
+     | Minus -> "Minus"
+     | StPlus -> "StPlus"
+     | StMinus -> "StMinus"
+     | Zero -> "Zero"
  
      (* constant: {c} *)
      let const n = if n=Z.zero then Zero
@@ -130,7 +140,9 @@ let contains_zero s = match s with
       | Plus,Minus | Minus,Plus -> Zero
       | a, b when is_minus a && is_plus b -> SBot
       | b,a when is_minus a && is_plus b -> SBot
-      | _ -> failwith "il manque un cas dans les meet"
+      | Zero,b when not (contains_zero b) -> SBot
+      | a,Zero when not(contains_zero a) -> SBot
+      | _ -> failwith ("il manque un cas dans les meet"^(to_string a)^(to_string b))
 
 
 
@@ -174,14 +186,17 @@ let contains_zero s = match s with
       | AST_GREATER_EQUAL,_,_ -> let a,b = compare y x AST_LESS_EQUAL in (b,a)
       | AST_LESS,_,STop | AST_LESS_EQUAL,_,STop -> (x,STop)
       | AST_LESS,STop,_ | AST_LESS_EQUAL,STop,_ -> (y,y)
-      | (AST_LESS,x,y) | (AST_LESS_EQUAL,x,y) when x = y -> (x,y)
+      | (AST_LESS_EQUAL,x,y) when x = y -> (x,y)
       | AST_LESS,Minus,Zero | AST_LESS,StMinus,Zero | AST_LESS_EQUAL,StMinus,Zero -> StMinus,Zero
       | AST_LESS_EQUAL,Minus,Zero -> Minus,Zero
       | AST_LESS_EQUAL,Zero,y when not (is_minus y) -> Zero,y
       | AST_LESS,Zero,y when is_plus y -> Zero,StPlus
       | _,Plus,StPlus | _,StPlus,Plus -> StPlus,StPlus
       | AST_LESS,Plus,Minus -> Zero,Zero
-      | _ -> SBot,SBot
+      | AST_LESS,Minus,_ -> Minus,y
+      | AST_LESS,StMinus,_ -> StMinus,y
+      | AST_LESS,Plus,_ | AST_LESS,StPlus,_ | AST_LESS,Zero,_ -> x,meet y StPlus
+      | _ -> x,y
 
 
  
@@ -240,14 +255,6 @@ let contains_zero s = match s with
      | StMinus -> Format.fprintf fmt "StMinus"
      | Zero -> Format.fprintf fmt "Zero"
 
-     let to_string a = match a with
-     | STop -> "Top"
-     | SBot -> "Bot"
-     | Plus -> "Plus"
-     | Minus -> "Minus"
-     | StPlus -> "StPlus"
-     | StMinus -> "StMinus"
-     | Zero -> "Zero"
  
  end
  

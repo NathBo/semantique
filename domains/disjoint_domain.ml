@@ -91,7 +91,11 @@ module DOMAIN_DISJOINT (VD:Value_domain.VALUE_DOMAIN) : Domain_sig.DOMAIN =
 
     (* abstract join *)
     let join a b =
-      failwith "pas implémenté2"
+      let merge_fun _ a b = match a,b with
+      | None,None -> None
+      | Some x, None | None, Some x -> Some x
+      | Some a, Some b -> Some (addposslist a b) in
+      E.merge merge_fun a b
 
     (* abstract meet *)
     let meet a b = failwith "pas implémenté3"

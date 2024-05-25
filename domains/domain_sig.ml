@@ -35,6 +35,7 @@ module type DOMAIN =
 
     (* assign an integer expression to a variable *)
     val assign: t -> var -> int_expr -> t
+    val assign_top: t -> var -> t
 
     (* filter environments to keep only those satisfying the boolean expression *)
     val guard: t -> bool_expr -> t

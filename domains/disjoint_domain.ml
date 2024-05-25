@@ -68,6 +68,7 @@ module DOMAIN_DISJOINT (VD:Value_domain.VALUE_DOMAIN) : Domain_sig.DOMAIN =
 
     (* assign an integer expression to a variable *)
     let assign (env:VD.t list E.t) var int_expr = failwith "pas implémenté1"
+    let assign_top (env:VD.t list E.t) var = failwith "pas implémenté1bis"
 
 
     (* abstract join *)

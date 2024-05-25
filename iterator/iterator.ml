@@ -185,7 +185,7 @@ module ITERATOR_FONCTOR(VD:Value_domain.VALUE_DOMAIN) (DOMAIN:Domain_sig.DOMAIN)
                             let subEnv = DOMAIN.guard curEnv (negate bexpr) in
                             if not (DOMAIN.is_bottom subEnv) then
                                 print_endline ("File "^filename^", line "^(string_of_int (fst ext).pos_lnum)^": Assertion failure")
-                            ; DOMAIN.guard curEnv (bexpr)
+                            ; DOMAIN.guard curEnv bexpr
                     | CFG_call fct -> ignore fct; failwith "this case is impossible"
                 in DOMAIN.join value newVal
             ) DOMAIN.bottom node.node_in in
@@ -199,7 +199,39 @@ module ITERATOR_FONCTOR(VD:Value_domain.VALUE_DOMAIN) (DOMAIN:Domain_sig.DOMAIN)
         ignore envs
  
 
-    let backward filename cfg = ignore filename; ignore cfg; failwith "TODO backward"    
+    let backward filename cfg =
+        ignore filename; ignore cfg;
+        let start = cfg.cfg_init_exit in
+
+        let update node envs =
+            List.fold_left (fun value arc -> 
+                let dest = arc.arc_dst in
+                Format.fprintf Format.std_formatter " -> to %d\n" dest.node_id;
+                let curEnv = NodeMap.find dest envs in
+                let newVal = match arc.arc_inst with
+                    | CFG_skip _ -> curEnv 
+                    | CFG_assign (var,iexpr) ->
+                        ignore iexpr;
+                        (*begin try DOMAIN.assign curEnv var iexpr
+                        with | Frontend.Abstract_syntax_tree.DivisionByZero -> 
+                            print_endline ("Warning : File "^filename^": Division by zero");
+                            DOMAIN.bottom
+                        end *)
+                        DOMAIN.assign_top curEnv var 
+                    | CFG_guard bexpr -> ignore bexpr; failwith "TODO guard"
+                    | CFG_assert (bexpr,_) -> DOMAIN.guard curEnv bexpr
+                    | CFG_call fct -> ignore fct; failwith "this case is impossible"
+                in DOMAIN.meet value newVal
+            ) DOMAIN.bottom node.node_out
+        in
+
+        let next node =
+            List.rev (List.map (fun arc -> arc.arc_src) node.node_in)
+        in
+
+        let envs = dfs cfg start update next in
+        ignore envs;
+        failwith "TODO backward"
 
     let iterate filename cfg_with_fct is_reverse =
         Format.printf "is reverse %b\n" is_reverse;

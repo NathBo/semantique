@@ -73,6 +73,9 @@ module DOMAIN_FUNCTOR (VD:Value_domain.VALUE_DOMAIN) : Domain_sig.DOMAIN =
     let assign env var int_expr = 
       Env.add var (evaluate env int_expr) env
 
+    let assign_top env var = 
+      Env.add var VD.top env
+        
 
     (* abstract join *)
     let join a b =

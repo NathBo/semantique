@@ -129,8 +129,11 @@ let replace_fct cfg_old =
 module ITERATOR_FONCTOR(VD:Value_domain.VALUE_DOMAIN) (DOMAIN:Domain_sig.DOMAIN) = 
     struct
 
-    let dfs cfg start update next =
-        let envs = ref (List.fold_left (fun map node -> NodeMap.add node DOMAIN.bottom map) NodeMap.empty cfg.cfg_nodes) in
+    let init_envs_bottom cfg =
+        List.fold_left (fun map node -> NodeMap.add node DOMAIN.bottom map) NodeMap.empty cfg.cfg_nodes
+
+    let dfs cfg start update next envs_init=
+        let envs = ref envs_init in
         let worklist = ref [ start ] in
         let already_seen = ref NodeSet.empty in
         let widening_set = select_widening_node cfg in
@@ -195,8 +198,7 @@ module ITERATOR_FONCTOR(VD:Value_domain.VALUE_DOMAIN) (DOMAIN:Domain_sig.DOMAIN)
             (* en cas de boucle, il est préférable (en espérance) d'inverser l'ordre des noeuds vu la façon dont est construi le cfg *)
         in
 
-        let envs = dfs cfg start update next in
-        ignore envs
+        dfs cfg start update next (init_envs_bottom cfg) (* return new envs *)
  
 
     let backward filename cfg =
@@ -218,26 +220,32 @@ module ITERATOR_FONCTOR(VD:Value_domain.VALUE_DOMAIN) (DOMAIN:Domain_sig.DOMAIN)
                             DOMAIN.bottom
                         end *)
                         DOMAIN.assign_top curEnv var 
-                    | CFG_guard bexpr -> ignore bexpr; failwith "TODO guard"
-                    | CFG_assert (bexpr,_) -> DOMAIN.guard curEnv bexpr
+                    | CFG_guard bexpr -> DOMAIN.guard curEnv bexpr
+                    | CFG_assert (bexpr,_) -> DOMAIN.guard curEnv (bexpr)
                     | CFG_call fct -> ignore fct; failwith "this case is impossible"
                 in DOMAIN.meet value newVal
-            ) DOMAIN.bottom node.node_out
+            ) (NodeMap.find node envs) node.node_out
         in
 
         let next node =
             List.rev (List.map (fun arc -> arc.arc_src) node.node_in)
         in
-
-        let envs = dfs cfg start update next in
-        ignore envs;
-        failwith "TODO backward"
+        
+        let envs_forward = forward filename cfg in
+        Format.fprintf Format.std_formatter "________________________________________________________\n";
+        let envs = dfs cfg start update next envs_forward in
+        Format.fprintf Format.std_formatter "\027[31m___________Result of the backward analysis____________\027[0m\n";
+        NodeMap.iter (fun node domain ->
+            Format.fprintf Format.std_formatter "\n\027[33mnode %d :\027[0m\n" node.node_id;
+            DOMAIN.print Format.std_formatter domain;
+            Format.fprintf Format.std_formatter "\n"
+        ) envs
 
     let iterate filename cfg_with_fct is_reverse =
         Format.printf "is reverse %b\n" is_reverse;
         let cfg = replace_fct cfg_with_fct in
         Format.printf "%a" Cfg_printer.print_cfg cfg;
         let _ = Random.self_init () in
-        if is_reverse then backward filename cfg else forward filename cfg
+        if is_reverse then backward filename cfg else ignore(forward filename cfg)
 
     end

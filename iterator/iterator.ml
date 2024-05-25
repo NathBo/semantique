@@ -141,7 +141,7 @@ module ITERATOR_FONCTOR(VD:Value_domain.VALUE_DOMAIN) (DOMAIN:Domain_sig.DOMAIN)
             let node = List.hd !worklist in
             worklist := List.tl !worklist;
             
-            Format.fprintf Format.std_formatter "update node %d\n" node.node_id;
+            (*Format.fprintf Format.std_formatter "update node %d\n" node.node_id; *)
             let old_value = NodeMap.find node !envs in
             
             let new_value = update node !envs in
@@ -154,10 +154,10 @@ module ITERATOR_FONCTOR(VD:Value_domain.VALUE_DOMAIN) (DOMAIN:Domain_sig.DOMAIN)
             let no_change = ((DOMAIN.subset old_value widen_value) && (DOMAIN.subset widen_value old_value)) in
             envs := NodeMap.add node widen_value !envs ;
 
-            Format.fprintf Format.std_formatter "old->new %d\n" node.node_id;
+            (*Format.fprintf Format.std_formatter "old->new %d\n" node.node_id;
             DOMAIN.print Format.std_formatter old_value;
             DOMAIN.print Format.std_formatter widen_value;
-            Format.print_newline ();
+            Format.print_newline (); *)
 
             let first_time = not (NodeSet.mem node !already_seen) in
             if (not no_change) || first_time then
@@ -170,7 +170,7 @@ module ITERATOR_FONCTOR(VD:Value_domain.VALUE_DOMAIN) (DOMAIN:Domain_sig.DOMAIN)
     let update_forward with_assert filename node envs=
         List.fold_left (fun value arc -> 
             let source = arc.arc_src in
-            Format.fprintf Format.std_formatter " -> from %d\n" source.node_id;
+            (*Format.fprintf Format.std_formatter " -> from %d\n" source.node_id; *)
             let curEnv = NodeMap.find source envs in
             let newVal = match arc.arc_inst with
                 | CFG_skip _ -> curEnv 
@@ -220,7 +220,7 @@ module ITERATOR_FONCTOR(VD:Value_domain.VALUE_DOMAIN) (DOMAIN:Domain_sig.DOMAIN)
         let update node envs =
             List.fold_left (fun value arc -> 
                 let dest = arc.arc_dst in
-                Format.fprintf Format.std_formatter " -> to %d\n" dest.node_id;
+                (*Format.fprintf Format.std_formatter " -> to %d\n" dest.node_id;*)
                 let curEnv = NodeMap.find dest envs in
                 let newVal = match arc.arc_inst with
                     | CFG_skip _ -> curEnv 
@@ -238,7 +238,7 @@ module ITERATOR_FONCTOR(VD:Value_domain.VALUE_DOMAIN) (DOMAIN:Domain_sig.DOMAIN)
         in
         
         let envs_forward = forward_without_assert filename cfg in
-        Format.fprintf Format.std_formatter "________________________________________________________\n";
+        Format.fprintf Format.std_formatter "Forward analysis complete. Switch to backward analysis.\n";
         let envs = dfs cfg start update next envs_forward in
         Format.fprintf Format.std_formatter "\027[31m___________Result of the backward analysis____________\027[0m\n";
         NodeMap.iter (fun node domain ->
@@ -248,9 +248,7 @@ module ITERATOR_FONCTOR(VD:Value_domain.VALUE_DOMAIN) (DOMAIN:Domain_sig.DOMAIN)
         ) envs
 
     let iterate filename cfg_with_fct is_reverse =
-        Format.printf "is reverse %b\n" is_reverse;
         let cfg = replace_fct cfg_with_fct in
-        Format.printf "%a" Cfg_printer.print_cfg cfg;
         let _ = Random.self_init () in
         if is_reverse then backward filename cfg else ignore(forward filename cfg)
 

@@ -6,6 +6,7 @@
 
 open Frontend
 open! Cfg
+open! Abstract_syntax_tree
 
 
 (* Signature for the variables *)
@@ -160,8 +161,36 @@ module DOMAIN_FUNCTOR (VD:Value_domain.VALUE_DOMAIN) : Domain_sig.DOMAIN =
                 let new_val_result = VD.bwd_unary VD.top u_op old_val_result in
                 let new_env_result = Env.add var new_val_result r in
                 bwd_assign x var expr2 new_env_result
-        | CFG_int_binary (b_op, expr2, expr3) -> failwith "TODO"
+        | CFG_int_binary (b_op, expr2, expr3) ->
+                Format.fprintf Format.std_formatter "ici\n";
+                print Format.std_formatter r;
+                let val_result = match Env.find_opt var r with | Some x -> x | None -> VD.bottom in
+                Format.fprintf Format.std_formatter "ici2\n";
+                let possibilities = VD.bwd_binary (evaluate x expr2) (evaluate x expr3) b_op val_result in
 
+                let val1 = begin match b_op with
+                    | AST_PLUS ->     VD.binary val_result (snd possibilities) AST_MINUS
+                    | AST_MINUS ->    VD.binary val_result (snd possibilities) AST_PLUS
+                    | AST_MULTIPLY -> VD.binary val_result (snd possibilities) AST_DIVIDE
+                    | AST_DIVIDE ->   VD.binary val_result (snd possibilities) AST_MULTIPLY
+                    | AST_MODULO -> failwith "TODO"
+                end in
+                Format.fprintf Format.std_formatter "possibilities : ";
+                VD.print Format.std_formatter (fst possibilities);
+                VD.print Format.std_formatter (snd possibilities);
+                let val2 = begin match b_op with
+                    | AST_PLUS ->     VD.binary val_result (fst possibilities) AST_MINUS
+                    | AST_MINUS ->    VD.binary (fst possibilities) val_result AST_MINUS
+                    | AST_MULTIPLY -> VD.binary val_result (fst possibilities) AST_DIVIDE
+                    | AST_DIVIDE ->   VD.binary (fst possibilities) val_result AST_DIVIDE
+                    | AST_MODULO -> failwith "TODO"
+                end in
+
+
+                let env1 = bwd_assign x var expr2 (Env.add var val1 r) in
+                let env2 = bwd_assign x var expr3 (Env.add var val2 r) in
+
+                meet env1 env2
 
 
 

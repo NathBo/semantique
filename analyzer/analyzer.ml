@@ -25,14 +25,15 @@ let doit filename =
   Cfg_printer.output_dot !Options.cfg_out cfg;
 
   match !Options.domain with
-    | "constant" | "constants" -> Iter_Constant.iterate filename cfg
-    | "concrete" -> Iter_Concrete.iterate filename cfg
-    | "interval" -> Iter_Interval.iterate filename cfg
-    | "sign" -> Iter_Sign.iterate filename cfg
-    | "congruence" -> Iter_Congruence.iterate filename cfg
-    | "product" -> Iter_Product.iterate filename cfg
-    | "disjoint" -> Iter_Interval_Disjoint.iterate filename cfg
-    | _ ->          Iter_Interval.iterate filename cfg
+    | "constant" | "constants" -> Iter_Constant.iterate filename cfg !Options.backward
+    | "concrete" -> Iter_Concrete.iterate filename cfg !Options.backward
+    | "interval" -> Iter_Interval.iterate filename cfg !Options.backward
+    | "sign" -> Iter_Sign.iterate filename cfg !Options.backward 
+    | "congruence" -> Iter_Congruence.iterate filename cfg !Options.backward
+    | "product" -> Iter_Product.iterate filename cfg !Options.backward
+    | "disjoint" -> Iter_Interval_Disjoint.iterate filename cfg !Options.backward
+    | "" ->          Iter_Interval.iterate filename cfg !Options.backward
+    | other -> failwith ("unknow domain"^other)
 
 
 (* parses arguments to get filename *)

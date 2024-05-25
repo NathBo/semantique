@@ -39,3 +39,6 @@ check-domain: all
 # comme check mais on peut specifier le domaine
 #utiliser sous forme "make domain=constant check-domain"
 
+check-backward: all
+	@./_build/default/analyzer/analyzer.exe test.c --backward
+

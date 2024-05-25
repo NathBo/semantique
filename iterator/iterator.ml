@@ -121,7 +121,9 @@ module ITERATOR_FONCTOR(VD:Value_domain.VALUE_DOMAIN) (DOMAIN:Domain_sig.DOMAIN)
     struct
 
 
-    let iterate filename cfg_with_fct =
+    let iterate filename cfg_with_fct is_reverse =
+        Format.printf "is reverse %b\n" is_reverse;
+        
         let cfg = replace_fct cfg_with_fct in
         Format.printf "%a" Cfg_printer.print_cfg cfg;
         let _ = Random.self_init () in

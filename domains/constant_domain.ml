@@ -100,7 +100,7 @@ let constains_zero a = match a with
      | _ -> Top
  
      (* widening *)
-     let widen a b = Top
+     let widen a b = join a b
  
      (* narrowing *)
      let narrow a b = match a,b with

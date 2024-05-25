@@ -211,7 +211,7 @@ let contains_zero s = match s with
 
  
      (* widening *)
-     let widen a b = STop
+     let widen a b = join a b
  
   
 

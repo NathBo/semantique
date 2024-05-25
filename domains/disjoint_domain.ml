@@ -72,7 +72,11 @@ module DOMAIN_DISJOINT (VD:Value_domain.VALUE_DOMAIN) : Domain_sig.DOMAIN =
 
     (* abstract join *)
     let join a b =
-      failwith "pas implémenté2"
+        E.merge (fun var lstA_ lstB_ -> match lstA_,lstB_ with
+            | (None,None) -> failwith "impossible"
+            | (Some x, None) | (None, Some x) -> Some x
+            | (Some lstA, Some lstB) -> Some (lstA@lstB) (* TODO limiter la taille de la liste *)
+        ) a b
 
     (* abstract meet *)
     let meet a b = failwith "pas implémenté3"
@@ -83,7 +87,17 @@ module DOMAIN_DISJOINT (VD:Value_domain.VALUE_DOMAIN) : Domain_sig.DOMAIN =
 
 
     (* widening *)
-    let widen domain_A domain_B = failwith "pas implémenté5"
+    let widen domainA domainB =
+        (* pour une variable donnée, on n'a pas moyen de savoir quels éléments de la listeA comparer à la listeB, le seul widen possible serait donc de se ramener à des listes à un seul élément (ce qui est dommage) *)
+        E.merge (fun _ x y -> match x,y with
+            | (None, None) -> failwith "impossible"
+            | (Some x, None) | (None, Some x) -> Some x
+            | (Some lstA, Some lstB) ->
+                    let elemA = List.fold_left (fun union elem -> VD.join union elem) VD.bottom lstA in
+                    let elemB = List.fold_left (fun union elem -> VD.join union elem) VD.bottom lstA in
+                    Some [VD.widen elemA elemB]
+        ) domainA domainB
+
 
     (* narrowing *)
     let narrow a b =failwith "pas implémenté6"

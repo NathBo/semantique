@@ -131,7 +131,7 @@ let divides a b = match a,b with
       | _ -> (x,y)
  
      (* widening *)
-     let widen a b = top
+     let widen a b = join a b
  
      (* narrowing *)
      let narrow a b = match a,b with

@@ -99,19 +99,13 @@ module DOMAIN_FUNCTOR (VD:Value_domain.VALUE_DOMAIN) : Domain_sig.DOMAIN =
 
     (* widening *)
     let widen domain_A domain_B = 
-        Format.fprintf Format.std_formatter "widen :\n";
-        print Format.std_formatter domain_A;
-        print Format.std_formatter domain_B;
-        let a = Env.merge 
+        Env.merge 
             (fun var valA valB -> match valA,valB with
                 | (None, None) -> failwith "impossible"
                 | (None, Some x) -> Some x
                 | (Some x, None) -> Some x
                 | (Some x,Some y) -> Some (VD.widen x y)
             ) domain_A domain_B
-        in print Format.std_formatter a;
-        Format.print_newline();
-        a
 
     (* narrowing *)
     let narrow a b =

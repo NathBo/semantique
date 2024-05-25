@@ -21,10 +21,6 @@ module NodeSet = Set.Make(
     end )
 
 
-let get_main_node cfg =
-    List.fold_left (fun node f -> if f.func_name = "main" then f.func_entry else node) cfg.cfg_init_entry cfg.cfg_funcs
-
-
 let select_widening_node cfg =
     let result = ref NodeSet.empty in
     let in_progress = ref NodeSet.empty in
@@ -60,9 +56,6 @@ let replace_fct cfg_old =
     let rec remove_fct cfg1 =
         match cfg1.cfg_funcs with
         | [] -> cfg1 (* il n'y a plus de fonctions *)
-        | [f] when f.func_name = "main" -> cfg1
-        | f::l when f.func_name = "main" ->
-                remove_fct {cfg_vars = cfg1.cfg_vars; cfg_funcs= l@[f]; cfg_nodes = cfg1.cfg_nodes; cfg_arcs = cfg1.cfg_arcs; cfg_init_entry = cfg1.cfg_init_entry; cfg_init_exit = cfg1.cfg_init_exit}
         | fct::remains_fct -> begin
             let new_arc_list = ref cfg1.cfg_arcs in
             List.iter (fun arc -> 
@@ -86,7 +79,23 @@ let replace_fct cfg_old =
                 fct.func_exit.node_out <- arc2 :: fct.func_exit.node_out;
                 arc.arc_dst.node_in <- arc2 :: arc.arc_dst.node_in;
             ) fct.func_calls;
-            remove_fct {cfg_vars = cfg1.cfg_vars; cfg_funcs= remains_fct; cfg_nodes = cfg1.cfg_nodes; cfg_arcs = !new_arc_list; cfg_init_entry = cfg1.cfg_init_entry; cfg_init_exit = cfg1.cfg_init_exit}
+            
+            let init_exit = ref cfg1.cfg_init_exit in
+            if fct.func_name = "main" then begin
+                let arc_liaison = {
+                    arc_id = !new_arc_id;
+                    arc_src = cfg1.cfg_init_exit;
+                    arc_dst = fct.func_entry;
+                    arc_inst = CFG_skip "init to main"} in
+                incr new_arc_id;
+                new_arc_list := arc_liaison :: !new_arc_list;
+                fct.func_entry.node_in <- arc_liaison :: fct.func_entry.node_in;
+                cfg1.cfg_init_exit.node_out <- arc_liaison :: cfg1.cfg_init_exit.node_out;
+                init_exit := fct.func_exit
+            end;
+                    
+
+            remove_fct {cfg_vars = cfg1.cfg_vars; cfg_funcs= remains_fct; cfg_nodes = cfg1.cfg_nodes; cfg_arcs = !new_arc_list; cfg_init_entry = cfg1.cfg_init_entry; cfg_init_exit = !init_exit}
         end
     in
     let cfg2 = remove_fct cfg_old in
@@ -131,7 +140,8 @@ module ITERATOR_FONCTOR(VD:Value_domain.VALUE_DOMAIN) (DOMAIN:Domain_sig.DOMAIN)
         let envs = ref (List.fold_left (fun map node -> NodeMap.add node DOMAIN.bottom map) NodeMap.empty cfg.cfg_nodes) in
         ignore envs;
 
-        let worklist = ref [ cfg.cfg_init_entry ; get_main_node cfg ] in
+        (*let worklist = ref [ cfg.cfg_init_entry ; get_main_node cfg ] in *)
+        let worklist = ref [ cfg.cfg_init_entry ] in
         let already_seen = ref  NodeSet.empty in
 
         let widening_set = select_widening_node cfg in

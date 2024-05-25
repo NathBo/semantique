@@ -137,7 +137,7 @@ let print_num fmt a = match a with
  
      (* unary operation *)
      let unary a op = match op with
-      | AST_UNARY_MINUS -> num_un_minus (fst a),num_un_minus (snd a)
+      | AST_UNARY_MINUS -> num_un_minus (snd a),num_un_minus (fst a)
       | _ -> a
  
      (* binary operation *)

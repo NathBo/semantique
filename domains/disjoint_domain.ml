@@ -118,6 +118,7 @@ module DOMAIN_DISJOINT (VD:Value_domain.VALUE_DOMAIN) : Domain_sig.DOMAIN =
     (* whether the abstract element represents the empty set *)
     let is_bottom a  = failwith "pas implémenté10"
 
+    let bwd_assign x var expr r = failwith "les extensions ne sont pas compatibles entre elles"
 
   end
 

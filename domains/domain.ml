@@ -151,6 +151,20 @@ module DOMAIN_FUNCTOR (VD:Value_domain.VALUE_DOMAIN) : Domain_sig.DOMAIN =
         print_endline (VD.to_string vd2);
         let x = filter (filter a e1 vd1) e2 vd2 in print_endline "L'environnement final est :"; print_endline (to_string x); x end
 
+    let rec bwd_assign x var expr r = match expr with
+        | CFG_int_var r_var -> assign r r_var (CFG_int_var var)
+        | CFG_int_rand (_, _) -> x
+        | CFG_int_const _ -> x
+        | CFG_int_unary (u_op, expr2) ->
+                let old_val_result = Env.find var r in
+                let new_val_result = VD.bwd_unary VD.top u_op old_val_result in
+                let new_env_result = Env.add var new_val_result r in
+                bwd_assign x var expr2 new_env_result
+        | CFG_int_binary (b_op, expr2, expr3) -> failwith "TODO"
+
+
+
+
 
     (* whether an abstract element is included in another one *)
     let subset a b =

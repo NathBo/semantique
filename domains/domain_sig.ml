@@ -61,5 +61,8 @@ module type DOMAIN =
     (* prints *)
     val print: Format.formatter -> t -> unit
 
+    (* backward assign *)
+    val bwd_assign: t -> var -> int_expr -> t -> t
+
   end
 

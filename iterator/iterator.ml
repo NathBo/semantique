@@ -167,39 +167,51 @@ module ITERATOR_FONCTOR(VD:Value_domain.VALUE_DOMAIN) (DOMAIN:Domain_sig.DOMAIN)
         done;
         !envs
 
-    let forward filename cfg =
-        let start = cfg.cfg_init_entry in
-        
-        let update node envs =
-            List.fold_left (fun value arc -> 
-                let source = arc.arc_src in
-                Format.fprintf Format.std_formatter " -> from %d\n" source.node_id;
-                let curEnv = NodeMap.find source envs in
-                let newVal = match arc.arc_inst with
-                    | CFG_skip _ -> curEnv 
-                    | CFG_assign (var,iexpr) -> begin
-                        try DOMAIN.assign curEnv var iexpr
-                        with | Frontend.Abstract_syntax_tree.DivisionByZero -> 
-                            print_endline ("Warning : File "^filename^": Division by zero");
-                            DOMAIN.bottom (*TODO *)
-                        end
-                    | CFG_guard bexpr -> DOMAIN.guard curEnv bexpr
-                    | CFG_assert (bexpr,ext) ->
+    let update_forward with_assert filename node envs=
+        List.fold_left (fun value arc -> 
+            let source = arc.arc_src in
+            Format.fprintf Format.std_formatter " -> from %d\n" source.node_id;
+            let curEnv = NodeMap.find source envs in
+            let newVal = match arc.arc_inst with
+                | CFG_skip _ -> curEnv 
+                | CFG_assign (var,iexpr) -> begin
+                    try DOMAIN.assign curEnv var iexpr
+                    with | Frontend.Abstract_syntax_tree.DivisionByZero -> 
+                        print_endline ("Warning : File "^filename^": Division by zero");
+                        DOMAIN.bottom (*TODO *)
+                    end
+                | CFG_guard bexpr -> DOMAIN.guard curEnv bexpr
+                | CFG_assert (bexpr,ext) ->
+                        if with_assert then begin
                             let subEnv = DOMAIN.guard curEnv (negate bexpr) in
                             if not (DOMAIN.is_bottom subEnv) then
                                 print_endline ("File "^filename^", line "^(string_of_int (fst ext).pos_lnum)^": Assertion failure")
-                            ; DOMAIN.guard curEnv bexpr
-                    | CFG_call fct -> ignore fct; failwith "this case is impossible"
-                in DOMAIN.join value newVal
-            ) DOMAIN.bottom node.node_in in
-        
+                        end;
+                        DOMAIN.guard curEnv bexpr
+                | CFG_call fct -> ignore fct; failwith "this case is impossible"
+            in DOMAIN.join value newVal
+        ) DOMAIN.bottom node.node_in
+
+    let forward filename cfg =
+        let start = cfg.cfg_init_entry in
+        let update = update_forward true filename in
+       
         let next node =
             List.rev (List.map (fun arc -> arc.arc_dst) node.node_out)
             (* en cas de boucle, il est préférable (en espérance) d'inverser l'ordre des noeuds vu la façon dont est construi le cfg *)
         in
-
         dfs cfg start update next (init_envs_bottom cfg) (* return new envs *)
- 
+
+    let forward_without_assert filename cfg =
+        let start = cfg.cfg_init_entry in
+        let update = update_forward false filename in
+       
+        let next node =
+            List.rev (List.map (fun arc -> arc.arc_dst) node.node_out)
+            (* en cas de boucle, il est préférable (en espérance) d'inverser l'ordre des noeuds vu la façon dont est construi le cfg *)
+        in
+        dfs cfg start update next (init_envs_bottom cfg) (* return new envs *)
+
 
     let backward filename cfg =
         ignore filename; ignore cfg;
@@ -213,13 +225,7 @@ module ITERATOR_FONCTOR(VD:Value_domain.VALUE_DOMAIN) (DOMAIN:Domain_sig.DOMAIN)
                 let newVal = match arc.arc_inst with
                     | CFG_skip _ -> curEnv 
                     | CFG_assign (var,iexpr) ->
-                        ignore iexpr;
-                        (*begin try DOMAIN.assign curEnv var iexpr
-                        with | Frontend.Abstract_syntax_tree.DivisionByZero -> 
-                            print_endline ("Warning : File "^filename^": Division by zero");
-                            DOMAIN.bottom
-                        end *)
-                        DOMAIN.assign_top curEnv var 
+                        DOMAIN.bwd_assign (NodeMap.find node envs) var iexpr curEnv 
                     | CFG_guard bexpr -> DOMAIN.guard curEnv bexpr
                     | CFG_assert (bexpr,_) -> DOMAIN.guard curEnv (bexpr)
                     | CFG_call fct -> ignore fct; failwith "this case is impossible"
@@ -231,7 +237,7 @@ module ITERATOR_FONCTOR(VD:Value_domain.VALUE_DOMAIN) (DOMAIN:Domain_sig.DOMAIN)
             List.rev (List.map (fun arc -> arc.arc_src) node.node_in)
         in
         
-        let envs_forward = forward filename cfg in
+        let envs_forward = forward_without_assert filename cfg in
         Format.fprintf Format.std_formatter "________________________________________________________\n";
         let envs = dfs cfg start update next envs_forward in
         Format.fprintf Format.std_formatter "\027[31m___________Result of the backward analysis____________\027[0m\n";

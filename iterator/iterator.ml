@@ -129,35 +129,49 @@ let replace_fct cfg_old =
 module ITERATOR_FONCTOR(VD:Value_domain.VALUE_DOMAIN) (DOMAIN:Domain_sig.DOMAIN) = 
     struct
 
-
-    let iterate filename cfg_with_fct is_reverse =
-        Format.printf "is reverse %b\n" is_reverse;
-        
-        let cfg = replace_fct cfg_with_fct in
-        Format.printf "%a" Cfg_printer.print_cfg cfg;
-        let _ = Random.self_init () in
-
+    let dfs cfg start update next =
         let envs = ref (List.fold_left (fun map node -> NodeMap.add node DOMAIN.bottom map) NodeMap.empty cfg.cfg_nodes) in
-        ignore envs;
-
-        (*let worklist = ref [ cfg.cfg_init_entry ; get_main_node cfg ] in *)
-        let worklist = ref [ cfg.cfg_init_entry ] in
-        let already_seen = ref  NodeSet.empty in
-
+        let worklist = ref [ start ] in
+        let already_seen = ref NodeSet.empty in
         let widening_set = select_widening_node cfg in
-
         while !worklist <> [] do
             let node = List.hd !worklist in
             worklist := List.tl !worklist;
-
             
             Format.fprintf Format.std_formatter "update node %d\n" node.node_id;
             let old_value = NodeMap.find node !envs in
+            
+            let new_value = update node !envs in
+            
+            let is_widen = NodeSet.mem node widening_set in
+            let widen_value =
+                if is_widen then DOMAIN.widen old_value new_value
+                            else new_value in
 
-            let update = List.fold_left (fun value arc -> 
+            let no_change = ((DOMAIN.subset old_value widen_value) && (DOMAIN.subset widen_value old_value)) in
+            envs := NodeMap.add node widen_value !envs ;
+
+            Format.fprintf Format.std_formatter "old->new %d\n" node.node_id;
+            DOMAIN.print Format.std_formatter old_value;
+            DOMAIN.print Format.std_formatter widen_value;
+            Format.print_newline ();
+
+            let first_time = not (NodeSet.mem node !already_seen) in
+            if (not no_change) || first_time then
+                worklist := (next node)@(!worklist);
+
+            if first_time then already_seen := NodeSet.add node !already_seen
+        done;
+        !envs
+
+    let forward filename cfg =
+        let start = cfg.cfg_init_entry in
+        
+        let update node envs =
+            List.fold_left (fun value arc -> 
                 let source = arc.arc_src in
                 Format.fprintf Format.std_formatter " -> from %d\n" source.node_id;
-                let curEnv = NodeMap.find source !envs in
+                let curEnv = NodeMap.find source envs in
                 let newVal = match arc.arc_inst with
                     | CFG_skip _ -> curEnv 
                     | CFG_assign (var,iexpr) -> begin
@@ -175,26 +189,23 @@ module ITERATOR_FONCTOR(VD:Value_domain.VALUE_DOMAIN) (DOMAIN:Domain_sig.DOMAIN)
                     | CFG_call fct -> ignore fct; failwith "this case is impossible"
                 in DOMAIN.join value newVal
             ) DOMAIN.bottom node.node_in in
+        
+        let next node =
+            List.rev (List.map (fun arc -> arc.arc_dst) node.node_out)
+            (* en cas de boucle, il est préférable (en espérance) d'inverser l'ordre des noeuds vu la façon dont est construi le cfg *)
+        in
 
-            let is_widen = NodeSet.mem node widening_set in
-            let widen_value =
-                if is_widen then DOMAIN.widen old_value update
-                            else update in
+        let envs = dfs cfg start update next in
+        ignore envs
+ 
 
-            let no_change = ((DOMAIN.subset old_value widen_value) && (DOMAIN.subset widen_value old_value)) in
-            envs := NodeMap.add node widen_value !envs ;
+    let backward filename cfg = ignore filename; ignore cfg; failwith "TODO backward"    
 
-            Format.fprintf Format.std_formatter "old->new %d\n" node.node_id;
-            DOMAIN.print Format.std_formatter old_value;
-            DOMAIN.print Format.std_formatter widen_value;
-            Format.print_newline ();
-
-            let first_time = not (NodeSet.mem node !already_seen) in
-            if (not no_change) || first_time then begin
-                List.iter (fun arc -> worklist := arc.arc_dst :: !worklist) node.node_out
-            end;
-
-            if first_time then already_seen := NodeSet.add node !already_seen
-        done
+    let iterate filename cfg_with_fct is_reverse =
+        Format.printf "is reverse %b\n" is_reverse;
+        let cfg = replace_fct cfg_with_fct in
+        Format.printf "%a" Cfg_printer.print_cfg cfg;
+        let _ = Random.self_init () in
+        if is_reverse then backward filename cfg else forward filename cfg
 
     end

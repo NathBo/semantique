@@ -167,15 +167,16 @@ module ITERATOR_FONCTOR(VD:Value_domain.VALUE_DOMAIN) (DOMAIN:Domain_sig.DOMAIN)
         done;
         !envs
 
-    let update_forward with_assert filename node envs=
-        List.fold_left (fun value arc -> 
+    let update_forward first_pass with_assert filename node envs =
+        let env_common = List.fold_left (fun value arc -> 
             let source = arc.arc_src in
             (*Format.fprintf Format.std_formatter " -> from %d\n" source.node_id; *)
             let curEnv = NodeMap.find source envs in
             let newVal = match arc.arc_inst with
                 | CFG_skip _ -> curEnv 
                 | CFG_assign (var,iexpr) -> begin
-                    try DOMAIN.assign curEnv var iexpr
+                    try 
+                        DOMAIN.meet (DOMAIN.assign curEnv var iexpr) (DOMAIN.assign_top curEnv var)
                     with | Frontend.Abstract_syntax_tree.DivisionByZero -> 
                         print_endline ("Warning : File "^filename^": Division by zero");
                         DOMAIN.bottom (*TODO *)
@@ -190,30 +191,31 @@ module ITERATOR_FONCTOR(VD:Value_domain.VALUE_DOMAIN) (DOMAIN:Domain_sig.DOMAIN)
                         DOMAIN.guard curEnv bexpr
                 | CFG_call fct -> ignore fct; failwith "this case is impossible"
             in DOMAIN.join value newVal
-        ) DOMAIN.bottom node.node_in
+        ) DOMAIN.bottom node.node_in in
+        if first_pass then env_common else DOMAIN.meet env_common (NodeMap.find node envs)
 
-    let forward filename cfg =
+    let forward filename cfg envs =
         let start = cfg.cfg_init_entry in
-        let update = update_forward true filename in
+        let update = update_forward true true filename in
        
         let next node =
             List.rev (List.map (fun arc -> arc.arc_dst) node.node_out)
             (* en cas de boucle, il est préférable (en espérance) d'inverser l'ordre des noeuds vu la façon dont est construi le cfg *)
         in
-        dfs cfg start update next (init_envs_bottom cfg) (* return new envs *)
+        dfs cfg start update next envs (* return new envs *)
 
-    let forward_without_assert filename cfg =
+    let forward_without_assert first_pass filename cfg envs =
         let start = cfg.cfg_init_entry in
-        let update = update_forward false filename in
+        let update = update_forward first_pass false filename in
        
         let next node =
             List.rev (List.map (fun arc -> arc.arc_dst) node.node_out)
             (* en cas de boucle, il est préférable (en espérance) d'inverser l'ordre des noeuds vu la façon dont est construi le cfg *)
         in
-        dfs cfg start update next (init_envs_bottom cfg) (* return new envs *)
+        dfs cfg start update next envs (* return new envs *)
 
 
-    let backward filename cfg =
+    let backward iteration filename cfg envs =
         ignore filename; ignore cfg;
         let start = cfg.cfg_init_exit in
 
@@ -237,19 +239,41 @@ module ITERATOR_FONCTOR(VD:Value_domain.VALUE_DOMAIN) (DOMAIN:Domain_sig.DOMAIN)
             List.rev (List.map (fun arc -> arc.arc_src) node.node_in)
         in
         
-        let envs_forward = forward_without_assert filename cfg in
-        Format.fprintf Format.std_formatter "Forward analysis complete. Switch to backward analysis.\n";
-        let envs = dfs cfg start update next envs_forward in
-        Format.fprintf Format.std_formatter "\027[31m___________Result of the backward analysis____________\027[0m\n";
+        (*let envs_forward = forward_without_assert filename cfg in
+        Format.fprintf Format.std_formatter "Forward analysis complete. Switch to backward analysis.\n"; *)
+        let envs2 = dfs cfg start update next envs in
+        Format.fprintf Format.std_formatter "\027[31m___________Result of the backward analysis_(%d)_______\027[0m\n" iteration;
         NodeMap.iter (fun node domain ->
             Format.fprintf Format.std_formatter "\n\027[33mnode %d :\027[0m\n" node.node_id;
             DOMAIN.print Format.std_formatter domain;
             Format.fprintf Format.std_formatter "\n"
-        ) envs
+        ) envs2;
+        envs2
+
+    let forward_backward filename cfg init_envs =
+        let envs = ref init_envs in
+        let continue = ref true in
+        let iteration = ref 0 in
+        while !continue do
+            incr iteration;
+            envs := forward_without_assert (!iteration <= 1) filename cfg !envs;
+            envs := backward !iteration filename cfg !envs;
+
+            let response = ref "?" in
+            while not (List.mem !response ["";"Y";"y";"N";"n";"yes";"no";"Yes";"No"]) do
+                Format.fprintf Format.std_formatter "\027[32mDo you want to iterate one more time ? [Y/n] : \027[0m\n";
+                response := read_line();
+            done;
+            continue := List.mem !response ["";"Y";"y";"yes";"Yes"]
+        done
+
+
+
 
     let iterate filename cfg_with_fct is_reverse =
         let cfg = replace_fct cfg_with_fct in
         let _ = Random.self_init () in
-        if is_reverse then backward filename cfg else ignore(forward filename cfg)
+        let init_envs = init_envs_bottom cfg in
+        if is_reverse then forward_backward filename cfg init_envs else ignore(forward filename cfg init_envs)
 
     end

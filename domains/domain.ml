@@ -163,21 +163,26 @@ module DOMAIN_FUNCTOR (VD:Value_domain.VALUE_DOMAIN) : Domain_sig.DOMAIN =
                 bwd_assign x var expr2 new_env_result
         | CFG_int_binary (b_op, expr2, expr3) ->
                 let val_result = match Env.find_opt var r with | Some x -> x | None -> VD.bottom in
-                let possibilities = VD.bwd_binary (evaluate x expr2) (evaluate x expr3) b_op val_result in
+                let possibilities = try VD.bwd_binary (evaluate x expr2) (evaluate x expr3) b_op val_result
+                                    with Frontend.Abstract_syntax_tree.DivisionByZero -> (VD.top, VD.top)
+                in
 
                 let val1 = begin match b_op with
                     | AST_PLUS ->     VD.binary val_result (snd possibilities) AST_MINUS
                     | AST_MINUS ->    VD.binary val_result (snd possibilities) AST_PLUS
-                    | AST_MULTIPLY -> VD.binary val_result (snd possibilities) AST_DIVIDE
+                    | AST_MULTIPLY -> 
+                            (try VD.binary val_result (snd possibilities) AST_DIVIDE with Frontend.Abstract_syntax_tree.DivisionByZero -> VD.top)
                     | AST_DIVIDE ->   VD.binary val_result (snd possibilities) AST_MULTIPLY
-                    | AST_MODULO -> failwith "TODO"
+                    | AST_MODULO -> VD.top
                 end in
                 let val2 = begin match b_op with
                     | AST_PLUS ->     VD.binary val_result (fst possibilities) AST_MINUS
                     | AST_MINUS ->    VD.binary (fst possibilities) val_result AST_MINUS
-                    | AST_MULTIPLY -> VD.binary val_result (fst possibilities) AST_DIVIDE
-                    | AST_DIVIDE ->   VD.binary (fst possibilities) val_result AST_DIVIDE
-                    | AST_MODULO -> failwith "TODO"
+                    | AST_MULTIPLY ->
+                            (try VD.binary val_result (fst possibilities) AST_DIVIDE with Frontend.Abstract_syntax_tree.DivisionByZero -> VD.top)
+                    | AST_DIVIDE ->
+                            (try VD.binary (fst possibilities) val_result AST_DIVIDE with Frontend.Abstract_syntax_tree.DivisionByZero -> VD.top)
+                    | AST_MODULO -> VD.top
                 end in
 
 

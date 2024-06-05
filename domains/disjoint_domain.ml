@@ -15,9 +15,11 @@ module type VARS = sig
 end
 
 
+let list_iter2 f la lb =
+  List.iter (fun a -> List.iter (fun b -> f a b) lb) la
 
-
-
+let list_exists2 f la lb =
+  List.exists (fun a -> List.exists (fun b -> f a b) lb) la
 
 
 
@@ -52,9 +54,15 @@ module DOMAIN_DISJOINT (VD:Value_domain.VALUE_DOMAIN) : Domain_sig.DOMAIN =
       rep:= !rep^"]";
       !rep^"}"
 
+
+    let to_string_list vdl =
+      let rep = ref "" in
+      List.iter (fun x -> rep:= !rep^(VD.to_string x)^",") vdl;
+      !rep
+
     let envfind v env = match E.find_opt v env with
       | Some x -> x
-      | None -> VD.bottom
+      | None -> []
     
 
     (* initial environment, with all variables initialized to 0 *)
@@ -64,27 +72,70 @@ module DOMAIN_DISJOINT (VD:Value_domain.VALUE_DOMAIN) : Domain_sig.DOMAIN =
     let bottom = E.empty
 
 
+    let addposs nouv curr = if VD.is_bottom nouv || List.exists (VD.subset nouv) curr  then curr else nouv::curr
+
+    let rec addposslist nouvl curr = match nouvl with
+    | [] -> curr
+    | x::q -> addposslist q (x::curr)
 
 
-    (* assign an integer expression to a variable *)
-    let assign (env:VD.t list E.t) var int_expr = failwith "pas implémenté1"
-    let assign_top (env:VD.t list E.t) var = failwith "pas implémenté1bis"
+    let rec evaluate env int_expr = match int_expr with
+    | CFG_int_const n -> [VD.const n]
+    | CFG_int_var v -> envfind v env
+    | CFG_int_unary (op,i) -> let l = evaluate env i in List.map (fun x -> VD.unary x op) l
+    | CFG_int_binary (op,i1,i2) -> 
+      let a = evaluate env i1 in
+      let b = evaluate env i2 in
+      let rep = ref [] in
+      let aux a_elt b_elt =
+      rep := addposs ( VD.binary a_elt b_elt op) !rep in
+      list_iter2 aux a b;
+      !rep
+    | CFG_int_rand(n1,n2) -> [VD.rand n1 n2]
+
+
+
+  
+    let assign_top (env:VD.t list E.t) var = E.map (fun x -> [VD.top]) env
+    let assign (env:VD.t list E.t) var int_expr = E.add var (evaluate env int_expr) env
 
 
     (* abstract join *)
     let join a b =
-        E.merge (fun var lstA_ lstB_ -> match lstA_,lstB_ with
-            | (None,None) -> failwith "impossible"
-            | (Some x, None) | (None, Some x) -> Some x
-            | (Some lstA, Some lstB) -> Some (lstA@lstB) (* TODO limiter la taille de la liste *)
-        ) a b
+      let merge_fun _ a b = match a,b with
+      | None,None -> None
+      | Some x, None | None, Some x -> Some x
+      | Some a, Some b -> Some (addposslist a b) in
+      E.merge merge_fun a b
+
+
+    (* whether the abstract element represents the empty set *)
+    let is_bottom a  = E.for_all (fun _ x -> List.for_all VD.is_bottom x) a
+
+
+    let list_meet vd1 vd2 =
+      let rep = ref [] in
+        let rec aux a_elt b_elt = rep := addposs (VD.meet a_elt b_elt) !rep in
+        list_iter2 aux vd1 vd2; !rep
 
     (* abstract meet *)
-    let meet a b = failwith "pas implémenté3"
+    let meet a b = 
+      let rec aux _ o_vd1 o_vd2 = match o_vd1,o_vd2 with
+      | (_,None) | (None,_) -> None
+      | (Some vd1,Some vd2) ->  let rep = ref [] in
+        let rec aux a_elt b_elt = rep := addposs (VD.meet a_elt b_elt) !rep in
+        list_iter2 aux vd1 vd2; Some(!rep) in     (*TODO ameliorer ça*)
+      E.merge aux a b
 
 
     (* prints *)
-    let print fmt map =failwith "pas implémenté4"
+    let print fmt map =
+      Format.fprintf fmt "{@[";
+      E.iter (fun key value ->
+        Format.fprintf fmt "%s(%d) -> " key.var_name key.var_id;
+        Format.pp_print_list VD.print fmt value
+      ) map;
+      Format.fprintf fmt "@]}"
 
 
     (* widening *)
@@ -101,22 +152,65 @@ module DOMAIN_DISJOINT (VD:Value_domain.VALUE_DOMAIN) : Domain_sig.DOMAIN =
 
 
     (* narrowing *)
-    let narrow a b =failwith "pas implémenté6"
+    let narrow a b = a (*pas precis car de toute façon pas utilise par l'itérateur*)
 
 
     (*ne laisse pas passer les valeurs des variables qui feraient que int_expr ne serait pas à valeur dans vd*)
-    let rec filter env int_expr vd = failwith "pas implémenté7"
+    let rec filter env int_expr vdl = match int_expr with
+    | CFG_int_const z -> print_endline ((Z.to_string z)^"const "^(to_string_list vdl));if List.exists (fun x -> VD.subset (VD.const z) x) vdl then env else E.map (fun x -> []) env
+    | CFG_int_rand (n1,n2) -> if List.exists (fun x -> VD.subset (VD.rand n1 n2) x) vdl then env else E.map (fun x -> []) env
+    | CFG_int_var v -> let x = list_meet (envfind v env) vdl in print_endline ((to_string_list (envfind v env))^" meet "^(to_string_list vdl)^"="^(to_string_list x)); if List.for_all VD.is_bottom x then E.map (fun x -> []) env else E.add v x env
+    | CFG_int_unary (op,e) -> let a = evaluate env e in
+    let rep = ref [] in
+    let aux a_elt b_elt =
+      rep := addposs (VD.bwd_unary a_elt op b_elt) !rep in
+      list_iter2 aux a vdl;
+      filter env e !rep
+    | CFG_int_binary (op,e1,e2) ->
+      let a = evaluate env e1 in
+      let b = evaluate env e2 in
+      let rep1 = ref [] in
+      let rep2 = ref [] in
+      let aux a_elt b_elt e_elt =
+        let vd1,vd2 = VD.bwd_binary a_elt b_elt op e_elt in
+        rep1 := addposs vd1 !rep1;
+        rep2 := addposs vd2 !rep2 in
+      List.iter (fun a -> list_iter2 (aux a) b vdl) a;
+      filter (filter env e1 !rep1) e2 !rep2
 
 
     (* filter environments to keep only those satisfying the boolean expression *)
-    let rec guard a bool_expr = failwith "pas implémenté8"
+    let rec guard a bool_expr = match bool_expr with
+    | CFG_bool_const b -> if b then a else E.map (fun x -> []) a
+    | CFG_bool_rand -> a
+    | CFG_bool_unary (AST_NOT,expr) -> guard a (negate expr)
+    | CFG_bool_binary (op,e1,e2) -> begin match op with
+        | AST_AND -> meet (guard a e1) (guard a e2)
+        | AST_OR -> join (guard a e1) (guard a e2)
+        end
+    | CFG_compare (op,e1,e2) -> begin let vd1 = ref [] in
+        let vd2 = ref [] in
+        let rec aux a_elt b_elt =
+          let v1,v2 = VD.compare a_elt b_elt op in
+          print_endline (VD.to_string v1);
+          print_endline (VD.to_string v2);
+          vd1 := addposs v1 !vd1;
+          vd2 := addposs v2 !vd2 in
+        list_iter2 aux (evaluate a e1) (evaluate a e2);
+        print_endline ("evaluate "^(to_string_list (evaluate a e1)));
+        print_endline "On a l'environnement :";
+        print_endline (to_string a);
+        print_endline "On a les valeurs de :";
+        print_endline (to_string_list !vd1);
+        print_endline (to_string_list !vd2);
+        let x = filter (filter a e1 !vd1) e2 !vd2 in print_endline "L'environnement final est :"; print_endline (to_string x); x end
+
 
 
     (* whether an abstract element is included in another one *)
-    let subset a b =failwith "pas implémenté9"
+    let subset a b = E.for_all (fun v x -> E.mem v b && list_exists2 (fun y z -> VD.subset y z) x (E.find v b)) a
 
-    (* whether the abstract element represents the empty set *)
-    let is_bottom a  = failwith "pas implémenté10"
+
 
     let bwd_assign x var expr r = failwith "les extensions ne sont pas compatibles entre elles"
 

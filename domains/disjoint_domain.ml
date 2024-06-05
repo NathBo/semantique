@@ -132,9 +132,21 @@ module DOMAIN_DISJOINT (VD:Value_domain.VALUE_DOMAIN) : Domain_sig.DOMAIN =
       then E.add v l env
       else E.map (fun x -> [VD.bottom]) env
     | CFG_int_unary (op,e) -> let a = evaluate env e in
-      filter env e vdl (*pas sur*)
+    let aux acc b_elt =
+      addposslist (List.map (fun x -> VD.bwd_unary x op b_elt) a) acc in
+      let b = (List.fold_left aux vdl []) in
+      filter env e b
     | CFG_int_binary (op,e1,e2) ->
-      failwith "jsp"
+      let a = evaluate env e1 in
+      let b = evaluate env e2 in
+      let rep1 = ref [] in
+      let rep2 = ref [] in
+      let aux a_elt b_elt e_elt =
+        let vd1,vd2 = VD.bwd_binary a_elt b_elt op e_elt in
+        rep1 := addposs vd1 !rep1;
+        rep2 := addposs vd2 !rep2 in
+      List.iter (fun a -> List.iter2 (aux a) b vdl) a;
+      filter (filter env e1 !rep1) e2 !rep2
 
 
     (* filter environments to keep only those satisfying the boolean expression *)

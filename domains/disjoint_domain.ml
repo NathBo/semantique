@@ -15,7 +15,8 @@ module type VARS = sig
 end
 
 
-
+let list_iter2 f la lb =
+  List.iter (fun a -> List.iter (fun b -> f a b) lb) la
 
 
 
@@ -79,7 +80,7 @@ module DOMAIN_DISJOINT (VD:Value_domain.VALUE_DOMAIN) : Domain_sig.DOMAIN =
 
     let rec evaluate env int_expr = match int_expr with
     | CFG_int_const n -> [VD.const n]
-    | CFG_int_var v -> E.find v env
+    | CFG_int_var v -> envfind v env
     | CFG_int_unary (op,i) -> let l = evaluate env i in List.map (fun x -> VD.unary x op) l
     | CFG_int_binary (op,i1,i2) -> 
       let a = evaluate env i1 in
@@ -104,7 +105,11 @@ module DOMAIN_DISJOINT (VD:Value_domain.VALUE_DOMAIN) : Domain_sig.DOMAIN =
       E.merge merge_fun a b
 
     (* abstract meet *)
-    let meet a b = failwith "pas implémenté car pas utilisé dans l'itérateur"
+    let meet a b = 
+      let rec aux _ o_vd1 o_vd2 = match o_vd1,o_vd2 with
+      | (_,None) | (None,_) -> None
+      | (Some vd1,Some vd2) ->  Some (vd1) in     (*TODO ameliorer ça*)
+      E.merge aux a b
 
 
     (* prints *)
@@ -151,7 +156,7 @@ module DOMAIN_DISJOINT (VD:Value_domain.VALUE_DOMAIN) : Domain_sig.DOMAIN =
         let vd1,vd2 = VD.bwd_binary a_elt b_elt op e_elt in
         rep1 := addposs vd1 !rep1;
         rep2 := addposs vd2 !rep2 in
-      List.iter (fun a -> List.iter2 (aux a) b vdl) a;
+      List.iter (fun a -> list_iter2 (aux a) b vdl) a;
       filter (filter env e1 !rep1) e2 !rep2
 
 
@@ -170,7 +175,7 @@ module DOMAIN_DISJOINT (VD:Value_domain.VALUE_DOMAIN) : Domain_sig.DOMAIN =
           let v1,v2 = VD.compare a_elt b_elt op in
           vd1 := addposs v1 !vd1;
           vd2 := addposs v2 !vd2 in
-        List.iter2 aux (evaluate a e1) (evaluate a e2);
+        list_iter2 aux (evaluate a e1) (evaluate a e2);
         print_endline "On a l'environnement :";
         print_endline (to_string a);
         print_endline "On a les valeurs de :";
@@ -181,7 +186,7 @@ module DOMAIN_DISJOINT (VD:Value_domain.VALUE_DOMAIN) : Domain_sig.DOMAIN =
 
 
     (* whether an abstract element is included in another one *)
-    let subset a b = failwith "pas implémenté subset disjoint"
+    let subset a b = E.for_all (fun v x -> E.mem v b && List.exists2 (fun y z -> VD.subset y z) x (E.find v b)) a
 
     (* whether the abstract element represents the empty set *)
     let is_bottom a  = E.for_all (fun _ x -> x = []) a

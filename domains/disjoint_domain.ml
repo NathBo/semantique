@@ -18,7 +18,8 @@ end
 let list_iter2 f la lb =
   List.iter (fun a -> List.iter (fun b -> f a b) lb) la
 
-
+let list_exists2 f la lb =
+  List.exists (fun a -> List.exists (fun b -> f a b) lb) la
 
 
 
@@ -85,9 +86,11 @@ module DOMAIN_DISJOINT (VD:Value_domain.VALUE_DOMAIN) : Domain_sig.DOMAIN =
     | CFG_int_binary (op,i1,i2) -> 
       let a = evaluate env i1 in
       let b = evaluate env i2 in
-      let aux acc b_elt =
-      addposslist (List.map (fun x -> VD.binary b_elt x op) a) acc in
-      (List.fold_left aux b [])
+      let rep = ref [] in
+      let aux a_elt b_elt =
+      rep := addposs ( VD.binary a_elt b_elt op) !rep in
+      list_iter2 aux a b;
+      !rep
     | CFG_int_rand(n1,n2) -> [VD.rand n1 n2]
 
 
@@ -173,9 +176,12 @@ module DOMAIN_DISJOINT (VD:Value_domain.VALUE_DOMAIN) : Domain_sig.DOMAIN =
         let vd2 = ref [] in
         let rec aux a_elt b_elt =
           let v1,v2 = VD.compare a_elt b_elt op in
+          print_endline (VD.to_string v1);
+          print_endline (VD.to_string v2);
           vd1 := addposs v1 !vd1;
           vd2 := addposs v2 !vd2 in
         list_iter2 aux (evaluate a e1) (evaluate a e2);
+        print_endline (to_string_list (evaluate a e1));
         print_endline "On a l'environnement :";
         print_endline (to_string a);
         print_endline "On a les valeurs de :";
@@ -186,10 +192,10 @@ module DOMAIN_DISJOINT (VD:Value_domain.VALUE_DOMAIN) : Domain_sig.DOMAIN =
 
 
     (* whether an abstract element is included in another one *)
-    let subset a b = E.for_all (fun v x -> E.mem v b && List.exists2 (fun y z -> VD.subset y z) x (E.find v b)) a
+    let subset a b = E.for_all (fun v x -> E.mem v b && list_exists2 (fun y z -> VD.subset y z) x (E.find v b)) a
 
     (* whether the abstract element represents the empty set *)
-    let is_bottom a  = E.for_all (fun _ x -> x = []) a
+    let is_bottom a  = E.for_all (fun _ x -> List.for_all VD.is_bottom x) a
 
 
   end

@@ -72,7 +72,7 @@ module DOMAIN_DISJOINT (VD:Value_domain.VALUE_DOMAIN) : Domain_sig.DOMAIN =
     let bottom = E.empty
 
 
-    let addposs nouv curr = if VD.is_bottom nouv then curr else nouv::curr
+    let addposs nouv curr = if VD.is_bottom nouv || List.exists (VD.subset nouv) curr  then curr else nouv::curr
 
     let rec addposslist nouvl curr = match nouvl with
     | [] -> curr

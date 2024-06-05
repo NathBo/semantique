@@ -205,7 +205,7 @@ let print_num fmt a = match a with
       *)
       let rec compare x y op = let a,b = x in let c,d = y in match op with
       | AST_EQUAL -> (meet x y,meet x y)
-      | AST_NOT_EQUAL -> if a=b && c=d then (narrow x y, narrow y x) else x,y
+      | AST_NOT_EQUAL -> if a=b && c=d && b=c then (bottom,bottom) else x,y
       | AST_LESS_EQUAL -> (a,numbMin b d),(numbMax a c,d)
       | AST_LESS -> (a,numbMin b (num_minus d (N Z.one) true)),(numbMax (num_plus a (N Z.one) true) c,d)
       | AST_GREATER_EQUAL -> let r1,r2 = compare y x AST_LESS_EQUAL in r2,r1

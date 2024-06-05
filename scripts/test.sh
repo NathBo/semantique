@@ -273,6 +273,7 @@ treat_examples "interval" "Product Interval operations" "--domain product" ""
 treat_examples "congruence" "Product Congruence operations" "--domain product" ""
 treat_examples "constant" "Disjoint Constant operations" "--domain disjoint" ""
 treat_examples "interval" "Disjoint Interval operations" "--domain disjoint" ""
+treat_examples "disjoint" "Disjoint Specific" "--domain disjoint" ""
 echo "</table>"                                   >> $index_html
 echo "</body>"                                    >> $index_html
 echo "</html>"                                    >> $index_html

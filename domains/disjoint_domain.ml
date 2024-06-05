@@ -52,6 +52,12 @@ module DOMAIN_DISJOINT (VD:Value_domain.VALUE_DOMAIN) : Domain_sig.DOMAIN =
       rep:= !rep^"]";
       !rep^"}"
 
+
+    let to_string_list vdl =
+      let rep = ref "" in
+      List.iter (fun x -> rep:= !rep^(VD.to_string x)^",") vdl;
+      !rep
+
     let envfind v env = match E.find_opt v env with
       | Some x -> x
       | None -> []
@@ -150,14 +156,35 @@ module DOMAIN_DISJOINT (VD:Value_domain.VALUE_DOMAIN) : Domain_sig.DOMAIN =
 
 
     (* filter environments to keep only those satisfying the boolean expression *)
-    let rec guard a bool_expr = failwith "pas implémenté8"
+    let rec guard a bool_expr = match bool_expr with
+    | CFG_bool_const b -> if b then a else E.map (fun x -> []) a
+    | CFG_bool_rand -> a
+    | CFG_bool_unary (AST_NOT,expr) -> guard a (negate expr)
+    | CFG_bool_binary (op,e1,e2) -> begin match op with
+        | AST_AND -> meet (guard a e1) (guard a e2)
+        | AST_OR -> join (guard a e1) (guard a e2)
+        end
+    | CFG_compare (op,e1,e2) -> begin let vd1 = ref [] in
+        let vd2 = ref [] in
+        let rec aux a_elt b_elt =
+          let v1,v2 = VD.compare a_elt b_elt op in
+          vd1 := addposs v1 !vd1;
+          vd2 := addposs v2 !vd2 in
+        List.iter2 aux (evaluate a e1) (evaluate a e2);
+        print_endline "On a l'environnement :";
+        print_endline (to_string a);
+        print_endline "On a les valeurs de :";
+        print_endline (to_string_list !vd1);
+        print_endline (to_string_list !vd2);
+        let x = filter (filter a e1 !vd1) e2 !vd2 in print_endline "L'environnement final est :"; print_endline (to_string x); x end
+
 
 
     (* whether an abstract element is included in another one *)
-    let subset a b = failwith "pas implémenté9"
+    let subset a b = failwith "pas implémenté subset disjoint"
 
     (* whether the abstract element represents the empty set *)
-    let is_bottom a  = failwith "pas implémenté10"
+    let is_bottom a  = E.for_all (fun _ x -> x = []) a
 
 
   end

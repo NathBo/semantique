@@ -65,14 +65,15 @@ let divides a b = match a,b with
       | AST_UNARY_MINUS,C(a,b) -> C(a,Z.(-) a b)
  
      (* binary operation *)
-     let binary a b op = match op,a,b with
+     let rec binary a b op = match op,a,b with
       | AST_MODULO,_,_ | AST_DIVIDE,_,_ when constains_zero b -> raise DivisionByZero
       | _,_,CBot -> CBot
       | _,CBot,_ -> CBot
       | AST_PLUS,C(a,b),C(c,d) when a=c -> C(a,Z.(+) b d)
+      | AST_PLUS,C(a,b),C(c,d) when divides a c -> C(a,Z.(+) b d)
+      | AST_PLUS,C(a,b),C(c,d) when divides c a -> C(c,Z.(+) b d)
       | AST_PLUS,_,_ -> top
-      | AST_MINUS,C(a,b),C(c,d) when a=c -> C(a,Z.(-) b d)
-      | AST_MINUS,_,_ -> top
+      | AST_MINUS,ca,cb -> binary a (unary b AST_UNARY_MINUS) AST_PLUS
       | AST_MULTIPLY,C(a,b),C(c,d) when a=c-> C(a, Z.( * ) b d)
       | AST_MULTIPLY,C(a,b),C(c,d) when (c=Z.zero && d=Z.zero) || (a=Z.zero && b=Z.zero) -> C(Z.zero,Z.zero)
       | AST_MULTIPLY,C(a,b),C(c,d) when c=Z.zero -> C(Z.( * ) a d,Z.( * ) b d)
@@ -179,7 +180,8 @@ let divides a b = match a,b with
       let rep2 = if constains_zero x && constains_zero r then y else meet y (binary r x AST_DIVIDE) in
       rep1,rep2
      | AST_DIVIDE,_,_,_ -> x,y
-     | AST_MODULO,C(a,b),C(c,d),C(e,f) when c=Z.zero && e = Z.zero -> if f = Z.(mod) b d then C(d,Z.(mod) a d),y else (CBot,CBot)
+     | AST_MODULO,C(a,b),C(c,d),C(e,f) when c=Z.zero && e = Z.zero && a=Z.one -> C(d,f),y
+     | AST_MODULO,C(a,b),C(c,d),C(e,f) when c=Z.zero && e = Z.zero -> if Z.(mod) f d = Z.(mod) b d then C(d,Z.(mod) a d),y else if divides d a then (CBot,CBot) else x,y
      | AST_MODULO,_,_,_ -> x,y
 
      

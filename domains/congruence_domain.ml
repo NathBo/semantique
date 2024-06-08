@@ -118,8 +118,8 @@ let divides a b = match a,b with
      | CBot,_ | _,CBot -> CBot
      | C(a,b),C(c,d) when c=Z.one -> C(a,b)
      | C(a,b),C(c,d) when a=Z.one -> C(c,d)
-     | C(a,b),C(c,d) when divides c a -> if divides c (Z.(-) b d) then C(a,b) else bottom
-     | C(a,b),C(c,d) when divides a c -> if divides a (Z.(-) d b) then C(c,d) else bottom
+     | C(a,b),C(c,d) when divides c a -> if divides c (Z.(-) b d) then C(c,d) else bottom
+     | C(a,b),C(c,d) when divides a c -> if divides a (Z.(-) d b) then C(a,b) else bottom
      | _ -> top (*possibilite de faire mieux avec les restes chinois*)
 
 
@@ -181,6 +181,7 @@ let divides a b = match a,b with
       rep1,rep2
      | AST_DIVIDE,_,_,_ -> x,y
      | AST_MODULO,C(a,b),C(c,d),C(e,f) when c=Z.zero && e = Z.zero && a=Z.one -> C(d,f),y
+     | AST_MODULO,C(a,b),C(c,d),C(e,f) when c=Z.zero && e = Z.zero && a=d -> C(a,f),y
      | AST_MODULO,C(a,b),C(c,d),C(e,f) when c=Z.zero && e = Z.zero -> if Z.(mod) f d = Z.(mod) b d then C(d,Z.(mod) a d),y else if divides d a then (CBot,CBot) else x,y
      | AST_MODULO,_,_,_ -> x,y
 

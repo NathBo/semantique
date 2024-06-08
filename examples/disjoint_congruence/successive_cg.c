@@ -7,9 +7,11 @@
 void main(){
   int i = rand(0, 100);
   if(i%10==2 || i%10==5){
-    if(i%2==0){
-      assert(i%10==2);
+    if(i%10==2){
+      assert(i%10!=5);
     }
-    assert(i%10==2); //@KO
+    else{
+      assert(i%10!=5); //@KO
+    }
   }
 }

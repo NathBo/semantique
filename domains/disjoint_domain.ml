@@ -96,7 +96,7 @@ module DOMAIN_DISJOINT (VD:Value_domain.VALUE_DOMAIN) : Domain_sig.DOMAIN =
 
 
   
-    let assign_top (env:VD.t list E.t) var = E.map (fun x -> [VD.top]) env
+    let assign_top (env:VD.t list E.t) var = E.add var [VD.top] env
     let assign (env:VD.t list E.t) var int_expr = E.add var (evaluate env int_expr) env
 
 

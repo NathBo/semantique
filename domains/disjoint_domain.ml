@@ -157,9 +157,9 @@ module DOMAIN_DISJOINT (VD:Value_domain.VALUE_DOMAIN) : Domain_sig.DOMAIN =
 
     (*ne laisse pas passer les valeurs des variables qui feraient que int_expr ne serait pas à valeur dans vd*)
     let rec filter env int_expr vdl = match int_expr with
-    | CFG_int_const z -> print_endline ((Z.to_string z)^"const "^(to_string_list vdl));if List.exists (fun x -> VD.subset (VD.const z) x) vdl then env else E.map (fun x -> []) env
+    | CFG_int_const z -> if List.exists (fun x -> VD.subset (VD.const z) x) vdl then env else E.map (fun x -> []) env
     | CFG_int_rand (n1,n2) -> if List.exists (fun x -> VD.subset (VD.rand n1 n2) x) vdl then env else E.map (fun x -> []) env
-    | CFG_int_var v -> let x = list_meet (envfind v env) vdl in print_endline ((to_string_list (envfind v env))^" meet "^(to_string_list vdl)^"="^(to_string_list x)); if List.for_all VD.is_bottom x then E.map (fun x -> []) env else E.add v x env
+    | CFG_int_var v -> let x = list_meet (envfind v env) vdl in if List.for_all VD.is_bottom x then E.map (fun x -> []) env else E.add v x env
     | CFG_int_unary (op,e) -> let a = evaluate env e in
     let rep = ref [] in
     let aux a_elt b_elt =
@@ -192,18 +192,10 @@ module DOMAIN_DISJOINT (VD:Value_domain.VALUE_DOMAIN) : Domain_sig.DOMAIN =
         let vd2 = ref [] in
         let rec aux a_elt b_elt =
           let v1,v2 = VD.compare a_elt b_elt op in
-          print_endline (VD.to_string v1);
-          print_endline (VD.to_string v2);
           vd1 := addposs v1 !vd1;
           vd2 := addposs v2 !vd2 in
         list_iter2 aux (evaluate a e1) (evaluate a e2);
-        print_endline ("evaluate "^(to_string_list (evaluate a e1)));
-        print_endline "On a l'environnement :";
-        print_endline (to_string a);
-        print_endline "On a les valeurs de :";
-        print_endline (to_string_list !vd1);
-        print_endline (to_string_list !vd2);
-        let x = filter (filter a e1 !vd1) e2 !vd2 in print_endline "L'environnement final est :"; print_endline (to_string x); x end
+        let x = filter (filter a e1 !vd1) e2 !vd2 in x end
 
 
 

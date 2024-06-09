@@ -16,6 +16,11 @@ module Iter_Congruence = ITERATOR_FONCTOR(Congruence_domain.CONGRUENCEDOMAIN)(Do
 module Iter_Product = ITERATOR_FONCTOR(Product_domain.PRODUCTDOMAIN)(Domain.DOMAIN_FUNCTOR(Product_domain.PRODUCTDOMAIN))
 module Iter_Interval_Disjoint = ITERATOR_FONCTOR(Interval_domain.INTERVALDOMAIN)(Disjoint_domain.DOMAIN_DISJOINT(Interval_domain.INTERVALDOMAIN))
 module Iter_Congruence_Disjoint = ITERATOR_FONCTOR(Congruence_domain.CONGRUENCEDOMAIN)(Disjoint_domain.DOMAIN_DISJOINT(Congruence_domain.CONGRUENCEDOMAIN))
+module Iter_Product_Disjoint = ITERATOR_FONCTOR(Product_domain.PRODUCTDOMAIN)(Disjoint_domain.DOMAIN_DISJOINT(Product_domain.PRODUCTDOMAIN))
+module Iter_Constant_Disjoint = ITERATOR_FONCTOR(Constant_domain.CONSTANTDOMAIN)(Disjoint_domain.DOMAIN_DISJOINT(Constant_domain.CONSTANTDOMAIN))
+module Iter_Concrete_Disjoint = ITERATOR_FONCTOR(Concrete_domain.CONCRETE_DOMAIN)(Disjoint_domain.DOMAIN_DISJOINT(Concrete_domain.CONCRETE_DOMAIN))
+module Iter_Sign_Disjoint = ITERATOR_FONCTOR(Sign_domain.SIGN_DOMAIN)(Disjoint_domain.DOMAIN_DISJOINT(Sign_domain.SIGN_DOMAIN))
+
 
 (* parse filename *)
 let doit filename =
@@ -34,6 +39,10 @@ let doit filename =
     | "product" -> Iter_Product.iterate filename cfg !Options.backward
     | "disjoint" -> Iter_Interval_Disjoint.iterate filename cfg !Options.backward
     | "disjoint_congruence" -> Iter_Congruence_Disjoint.iterate filename cfg !Options.backward
+    | "disjoint_concrete" -> Iter_Concrete_Disjoint.iterate filename cfg !Options.backward
+    | "disjoint_sign" -> Iter_Sign_Disjoint.iterate filename cfg !Options.backward
+    | "disjoint_constant" -> Iter_Constant_Disjoint.iterate filename cfg !Options.backward
+    | "disjoint_product" -> Iter_Product_Disjoint.iterate filename cfg !Options.backward
     | "" ->          Iter_Interval.iterate filename cfg !Options.backward
     | other -> failwith ("unknow domain"^other)
 

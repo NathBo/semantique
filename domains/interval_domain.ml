@@ -187,7 +187,7 @@ let print_num fmt a = match a with
 
 
      (* subset inclusion of concretizations *)
-     let subset x y = print_endline (to_string y);let a,b = x in let c,d = y in c<=a && b<=d
+     let subset x y = let a,b = x in let c,d = y in c<=a && b<=d
  
      (* check the emptiness of the concretization *)
      let is_bottom a = sup (fst a) (snd a)
